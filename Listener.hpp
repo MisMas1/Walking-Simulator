@@ -18,7 +18,7 @@ struct Listener {
     bool prevTool         = false;
     bool pause            = false;
     bool quit             = false;
-
+ 
     float mouseDeltaX      = 0.0f;
     float mouseDeltaY      = 0.0f;
     float mouseSensitivity = 0.1f;
