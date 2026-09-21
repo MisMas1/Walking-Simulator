@@ -1,14 +1,31 @@
-# Walking-Simulator
-A simple walking simulator with horror elements
+# Gonjiam: Ghost Hunt
 
-Jocul va fi un walking sim cu unele mecanici care vor putea completa istoria si pentru a crea jucatorului senzatia ca se afla chaiar in joc si el trece pe acolo
+> **Walking Simulator Horror** în C++ axat pe atmosferă și presiune psihologică.
 
-Jocul va fi in gen horror care vor apasa pe jucator psihologic ,adica vor apasa pe el cu atmosfera, locatii intunecate care pot fi iluminate cu lanterna sau cu o lumina care se afla in spatele jucatorului 
+---
 
-Conceptul jocului este ca esti un youtuber (ca si Dima Maslenikov) care a cautat o locatie pentru a face videoclip pentru a arata ca nu este nimic infricosator in locatia data, va folosi diferite aparate care pot sa ajute ca sa descoper sau sa comunici cu lumeea cealalta, personajul se poate speria singur de unele momente care vor fi scriptate sau jucatorul poate sa isi faca singur asteptari ca dupa colturi se afla careva screameruri care nu vor fi,dupa ce el se va relaxa si va vedea ca nu prea sunt screameruri in joc ele vor aparea ca prin surprindere (ceeea ce am mentionat ma sus ca personajul se va speria scriptat)
+##  Concept & Game Design (GDD)
 
-Obiectele care vor fi folosite pentru GhostHunt vor fi de ex Fotoaparat Paloroid, diferite cutii care pot sa prinda la nivel magnetic diferite unde (EMF Meter), SpiritPod, Dowsing Rods, etc.
+### Concept
+Jucătorul este un **YouTuber** (stil *Dima Maslenikov*) care explorează **Spitalul Psihiatric Gonjiam** din Coreea de Sud pentru a demonstra într-un videoclip că zvonurile despre activitățile paranormale sunt false.
 
-Locatia unde se va intimpla tot va fi un spital de psihiatrie care se afla in Coreea de Sud (Spital Psihiatric Gonjiam) 
+Acțiunea începe noaptea, în pădurea spre spital. În timp ce înaintează prin întuneric, personajul povestește istoria spitalului, de ce a fost construit departe de civilizație și de ce este considerat bântuit.
 
-Toata actiunea se va incepe noaptea cum noi suntem in padure si mergem spre acel spital si in timp ce mergem personajul principal va povesti de ce a ales anume acea locatie,istora acestui spital si de ce se considera bintuit,de ce a fost construit in mijlocul padurii departe de civilizatie. 
+### Regulile Jocului
+* **Walking Simulator:** Fără luptă, doar explorare și investigație. Zonele întunecate se luminează cu lanterna sau cu o sursă de lumină aflată în spatele jucătorului.
+* **Mecanică de Frică:** Frica crește la evenimente paranormale și scade în timp. Nivelul mare de frică afectează lanterna și vizibilitatea.
+* **Subvertirea Așteptărilor:** Jocul creează tensiune prin alarme false după colțuri. După ce jucătorul se relaxează, apar evenimente scriptate reale, prin surprindere. Personajul se poate speria și singur.
+* **Echipament Ghost Hunt:**
+  *  **Lanternă:** Luminează calea.
+  *  **Aparat Foto Polaroid:** Fotografiază anomalii.
+  *  **EMF Meter:** Măsoară câmpurile electromagnetice (1-5).
+  *  **SpiritPod:** Înregistrează și ascultă răspunsuri de la spirite.
+  *  **Dowsing Rods:** Indică direcția anomaliilor.
+
+### Controale Propuși
+* `W / A / S / D`: Deplasare | `Shift`: Sprint (consumă stamina)
+* `F`: Aprinde / Stinge lanterna | `Click Stânga`: Folosește unealta
+* `E`: Interacțiune | `Scroll / 1-5`: Schimbă unealta | `ESC`: Pauză
+
+---
+
