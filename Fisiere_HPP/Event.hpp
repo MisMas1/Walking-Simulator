@@ -15,7 +15,7 @@ struct Event
 
     bool operator==(const Event &other) const;
     bool operator!=(const Event &other) const;
-    bool operator<(const Event &other) const; // ordine dupa id
+    bool operator<(const Event &other) const; 
 
     void Trigger();
     bool ShouldTrigger(const Vec3& playerPosition, int safeCorners) const;

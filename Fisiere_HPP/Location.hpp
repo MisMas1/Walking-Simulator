@@ -35,7 +35,7 @@ struct Location
 
     bool operator==(const Location &other) const;
     bool operator!=(const Location &other) const;
-    bool operator<(const Location &other) const; // ordine dupa id
+    bool operator<(const Location &other) const; 
 
     void MarkVisited();
     bool IsVisited() const;

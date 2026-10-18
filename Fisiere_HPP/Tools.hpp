@@ -8,9 +8,6 @@
 #include "Tool.hpp"
 #include "Types.hpp"
 
-// Operatorii <<, >>, == si != ai uneltelor sunt mosteniti de la Tool
-// si apeleaza metodele virtuale Print, Read si Equals ale fiecarei unelte.
-
 struct Flashlight : Tool
 {
     Flashlight();
@@ -82,7 +79,7 @@ struct EMFMeter : Tool
     void Print(std::ostream &os) const override;
     void Read(std::istream &is) override;
 
-    int currentLevel = 1; // 1 - 5
+    int currentLevel = 1; 
     float detectionRange = 10.0f;
     float sensitivity = 1.0f;
 };
@@ -126,9 +123,5 @@ struct DowsingRods : Tool
     float detectionRange = 10.0f;
 };
 
-// Creeaza o unealta concreta dupa tip (nullptr daca tipul nu e cunoscut).
 std::unique_ptr<Tool> MakeTool(ToolType type);
-
-// Citeste din flux o unealta de orice tip: intai tipul, apoi campurile ei.
-// Intoarce nullptr daca citirea esueaza.
 std::unique_ptr<Tool> ReadTool(std::istream &is);

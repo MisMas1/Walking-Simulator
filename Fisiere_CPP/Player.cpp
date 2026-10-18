@@ -5,7 +5,6 @@
 #include <istream>
 #include <ostream>
 
-// Copiaza fiecare unealta prin Clone(), ca doua Player sa nu imparta aceleasi obiecte.
 static void CopyItems(const std::vector<std::unique_ptr<Tool>> &from, std::vector<std::unique_ptr<Tool>> &to)
 {
     to.clear();

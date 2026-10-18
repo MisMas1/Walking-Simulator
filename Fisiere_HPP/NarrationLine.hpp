@@ -15,7 +15,7 @@ struct NarrationLine
 
     bool operator==(const NarrationLine &other) const;
     bool operator!=(const NarrationLine &other) const;
-    bool operator<(const NarrationLine &other) const; // ordine dupa capitol
+    bool operator<(const NarrationLine &other) const; 
 
     std::string text;
     float duration = 3.0f;

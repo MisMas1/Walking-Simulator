@@ -8,7 +8,6 @@
 #include "Player.hpp"
 #include "Location.hpp"
 
-// Desenatorul concret al jocului; implementeaza interfata abstracta IRenderer.
 struct Renderer : IRenderer
 {
 

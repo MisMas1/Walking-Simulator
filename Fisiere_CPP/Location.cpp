@@ -4,8 +4,6 @@
 #include <istream>
 #include <ostream>
 
-// ---------- Interactable ----------
-
 Interactable::Interactable() {}
 
 Interactable::Interactable(const std::string &_name, const Vec3 &_position, const std::string &_loreText)
@@ -44,8 +42,6 @@ std::istream &operator>>(std::istream &is, Interactable &item)
 {
     return is >> std::quoted(item.name) >> item.position >> item.used >> std::quoted(item.loreText);
 }
-
-// ---------- Location ----------
 
 Location::Location() {}
 

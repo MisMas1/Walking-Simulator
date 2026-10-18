@@ -3,8 +3,6 @@
 #include <istream>
 #include <ostream>
 
-// ---------- Vec3 ----------
-
 Vec3::Vec3() {}
 
 Vec3::Vec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
@@ -29,7 +27,6 @@ bool Vec3::operator==(const Vec3 &other) const
 
 bool Vec3::operator!=(const Vec3 &other) const { return !(*this == other); }
 
-// Ordine lexicografica: dupa x, apoi dupa y, apoi dupa z.
 bool Vec3::operator<(const Vec3 &other) const
 {
     if (x != other.x)
@@ -52,8 +49,6 @@ std::istream &operator>>(std::istream &is, Vec3 &v)
 {
     return is >> v.x >> v.y >> v.z;
 }
-
-// ---------- Color ----------
 
 Color::Color() {}
 
@@ -89,8 +84,6 @@ std::istream &operator>>(std::istream &is, Color &c)
 {
     return is >> c.r >> c.g >> c.b >> c.a;
 }
-
-// ---------- Enum-uri ----------
 
 std::ostream &operator<<(std::ostream &os, ToolType type)
 {

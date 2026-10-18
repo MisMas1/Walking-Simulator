@@ -74,7 +74,6 @@ std::istream &operator>>(std::istream &is, Tool &tool)
     if (!(is >> type))
         return is;
 
-    // Tipul citit trebuie sa fie chiar tipul obiectului in care citim.
     if (type != tool.type)
     {
         is.setstate(std::ios::failbit);

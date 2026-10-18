@@ -76,8 +76,6 @@ enum class EventType {
     Narration
 };
 
-// Operatori de intrare / iesire.
-// Format text: valorile sunt separate prin spatiu, enum-urile se scriu ca numar.
 std::ostream &operator<<(std::ostream &os, const Vec3 &v);
 std::istream &operator>>(std::istream &is, Vec3 &v);
 

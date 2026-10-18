@@ -13,7 +13,7 @@ struct Player
 
     Player();
     Player(const std::string &_name, const Vec3 &_position);
-    Player(const Player &other); // copiere profunda: inventarul se copiaza unealta cu unealta
+    Player(const Player &other); 
     Player &operator=(const Player &other);
 
     bool operator==(const Player &other) const;

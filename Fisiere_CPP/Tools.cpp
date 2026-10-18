@@ -293,8 +293,6 @@ void DowsingRods::Read(std::istream &is)
     is >> angle >> pointingAt >> detectionRange;
 }
 
-// ---------- Functii ajutatoare ----------
-
 std::unique_ptr<Tool> MakeTool(ToolType type)
 {
     switch (type)
