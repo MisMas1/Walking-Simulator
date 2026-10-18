@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iosfwd>
 #include <string>
 
 #include "Types.hpp"
@@ -8,10 +9,17 @@ struct Event
 {
 
     Event();
+    Event(int _id, EventType _type, int _locationId, const Vec3 &_triggerPosition, float _fearAmount);
+    Event(const Event &other);
+    Event &operator=(const Event &other);
+
+    bool operator==(const Event &other) const;
+    bool operator!=(const Event &other) const;
+    bool operator<(const Event &other) const; // ordine dupa id
 
     void Trigger();
     bool ShouldTrigger(const Vec3& playerPosition, int safeCorners) const;
-    
+
     int id = 0;
     EventType type = EventType::Ambient;
     int locationId = 0;
@@ -31,3 +39,6 @@ struct Event
 
     bool triggered = false;
 };
+
+std::ostream &operator<<(std::ostream &os, const Event &event);
+std::istream &operator>>(std::istream &is, Event &event);

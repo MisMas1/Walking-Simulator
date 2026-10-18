@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iosfwd>
 #include <memory>
 #include <string>
 #include <vector>
@@ -11,6 +12,12 @@ struct Player
 {
 
     Player();
+    Player(const std::string &_name, const Vec3 &_position);
+    Player(const Player &other); // copiere profunda: inventarul se copiaza unealta cu unealta
+    Player &operator=(const Player &other);
+
+    bool operator==(const Player &other) const;
+    bool operator!=(const Player &other) const;
 
     void Update(float deltaTime);
     void Move(const Vec3 &direction, float deltaTime);
@@ -41,3 +48,6 @@ struct Player
 
     bool isAlive = true;
 };
+
+std::ostream &operator<<(std::ostream &os, const Player &player);
+std::istream &operator>>(std::istream &is, Player &player);

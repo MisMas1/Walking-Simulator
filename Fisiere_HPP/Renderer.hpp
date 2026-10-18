@@ -4,19 +4,21 @@
 
 #include "Types.hpp"
 
+#include "IRenderer.hpp"
 #include "Player.hpp"
 #include "Location.hpp"
 
-struct Renderer
+// Desenatorul concret al jocului; implementeaza interfata abstracta IRenderer.
+struct Renderer : IRenderer
 {
 
     Renderer();
 
-    bool Init();
-    void Clear();
-    void Present();
-    void DrawScene(const Location &location, const Player &player);
-    void DrawHUD(const Player &player);
+    bool Init() override;
+    void Clear() override;
+    void Present() override;
+    void DrawScene(const Location &location, const Player &player) override;
+    void DrawHUD(const Player &player) override;
 
     int windowWidth = 1280;
     int windowHeight = 720;
