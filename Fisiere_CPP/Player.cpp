@@ -1,36 +1,37 @@
 #include "Player.hpp"
 #include "Tools.hpp"
 
+#include <algorithm>
 #include <iomanip>
 #include <istream>
+#include <iterator>
 #include <ostream>
+#include <stdexcept>
 
-static void CopyItems(const std::vector<std::unique_ptr<Tool>> &from, std::vector<std::unique_ptr<Tool>> &to)
+using Items = std::vector<std::unique_ptr<Tool>>;
+
+// Copiaza inventarul cu std::transform: fiecare unealta se copiaza prin Clone(),
+// ca doua Player sa nu imparta aceleasi obiecte.
+static void CopyItems(const Items &from, Items &to)
 {
     to.clear();
     to.reserve(from.size());
-    for (const std::unique_ptr<Tool> &item : from)
-        to.push_back(item ? item->Clone() : nullptr);
+    std::transform(from.begin(), from.end(), std::back_inserter(to),
+                   [](const std::unique_ptr<Tool> &item) -> std::unique_ptr<Tool>
+                   { return item ? item->Clone() : nullptr; });
 }
 
-static bool SameItems(const std::vector<std::unique_ptr<Tool>> &a, const std::vector<std::unique_ptr<Tool>> &b)
+// Compara doua inventare cu std::equal; folosim *x == *y (Tool::operator==, virtual).
+static bool SameItems(const Items &a, const Items &b)
 {
-    if (a.size() != b.size())
-        return false;
-
-    for (std::size_t i = 0; i < a.size(); ++i)
-    {
-        if (!a[i] || !b[i])
-        {
-            if (a[i] != b[i])
-                return false;
-        }
-        else if (*a[i] != *b[i])
-        {
-            return false;
-        }
-    }
-    return true;
+    return a.size() == b.size() &&
+           std::equal(a.begin(), a.end(), b.begin(),
+                      [](const std::unique_ptr<Tool> &x, const std::unique_ptr<Tool> &y)
+                      {
+                          if (!x || !y)
+                              return !x && !y;
+                          return *x == *y;
+                      });
 }
 
 Player::Player() {}
@@ -85,18 +86,98 @@ bool Player::operator==(const Player &other) const
 
 bool Player::operator!=(const Player &other) const { return !(*this == other); }
 
-void Player::Update(float deltaTime) {}
-void Player::Move(const Vec3 &direction, float deltaTime) {}
-void Player::Rotate(float deltaYaw, float deltaPitch) {}
-void Player::AddFear(float amount) {}
+void Player::Update(float deltaTime)
+{
+    // Frica scade in timp; stamina scade la sprint si se reface la odihna.
+    fear = std::clamp(fear - fearDecay * deltaTime, 0.0f, maxFear);
+
+    const float staminaChange = isSprinting ? -staminaDrain : staminaRegen;
+    stamina = std::clamp(stamina + staminaChange * deltaTime, 0.0f, maxStamina);
+
+    if (stamina <= 0.0f)
+        isSprinting = false;
+}
+
+void Player::Move(const Vec3 &direction, float deltaTime)
+{
+    const float currentSpeed = isSprinting ? sprintSpeed : speed;
+    position.x += direction.x * currentSpeed * deltaTime;
+    position.y += direction.y * currentSpeed * deltaTime;
+    position.z += direction.z * currentSpeed * deltaTime;
+}
+
+void Player::Rotate(float deltaYaw, float deltaPitch)
+{
+    yaw += deltaYaw;
+    pitch = std::clamp(pitch + deltaPitch, -89.0f, 89.0f);
+}
+
+void Player::AddFear(float amount)
+{
+    fear = std::clamp(fear + amount, 0.0f, maxFear);
+}
+
 Vec3 Player::GetPosition() const { return position; }
+
+void Player::AddTool(std::unique_ptr<Tool> tool)
+{
+    if (tool)
+        items.push_back(std::move(tool));
+}
+
+// std::any_of: cautare care raspunde doar "exista sau nu".
+bool Player::HasTool(ToolType type) const
+{
+    return std::any_of(items.begin(), items.end(),
+                       [type](const std::unique_ptr<Tool> &item) { return item && item->type == type; });
+}
+
+// std::find_if: cautare care intoarce pozitia primului element potrivit.
+Tool &Player::GetTool(ToolType type)
+{
+    Items::iterator it = std::find_if(items.begin(), items.end(),
+                                      [type](const std::unique_ptr<Tool> &item)
+                                      { return item && item->type == type; });
+    if (it == items.end())
+        throw std::out_of_range("Player: unealta nu exista in inventar: " + ToString(type));
+    return **it;
+}
+
+Tool &Player::ActiveTool()
+{
+    if (activeToolIndex < 0 || static_cast<std::size_t>(activeToolIndex) >= items.size() ||
+        !items[activeToolIndex])
+        throw std::out_of_range("Player: nu exista unealta activa");
+    return *items[activeToolIndex];
+}
+
+const Tool &Player::ActiveTool() const
+{
+    if (activeToolIndex < 0 || static_cast<std::size_t>(activeToolIndex) >= items.size() ||
+        !items[activeToolIndex])
+        throw std::out_of_range("Player: nu exista unealta activa");
+    return *items[activeToolIndex];
+}
+
+void Player::NextTool()
+{
+    if (items.empty())
+        return;
+    activeToolIndex = (activeToolIndex + 1) % static_cast<int>(items.size());
+}
+
+void Player::PrevTool()
+{
+    if (items.empty())
+        return;
+    const int count = static_cast<int>(items.size());
+    activeToolIndex = (activeToolIndex + count - 1) % count;
+}
 
 std::ostream &operator<<(std::ostream &os, const Player &p)
 {
-    std::size_t count = 0;
-    for (const std::unique_ptr<Tool> &item : p.items)
-        if (item)
-            ++count;
+    const auto count = std::count_if(p.items.begin(), p.items.end(),
+                                     [](const std::unique_ptr<Tool> &item) { return static_cast<bool>(item); });
 
     os << std::quoted(p.name) << ' ' << p.position << ' ' << p.yaw << ' ' << p.pitch << ' '
        << p.speed << ' ' << p.sprintSpeed << ' ' << p.isSprinting << ' ' << p.stamina << ' '
@@ -104,9 +185,12 @@ std::ostream &operator<<(std::ostream &os, const Player &p)
        << p.maxFear << ' ' << p.fearDecay << ' ' << p.activeToolIndex << ' ' << p.isAlive << ' '
        << count;
 
-    for (const std::unique_ptr<Tool> &item : p.items)
-        if (item)
-            os << ' ' << *item;
+    std::for_each(p.items.begin(), p.items.end(),
+                  [&os](const std::unique_ptr<Tool> &item)
+                  {
+                      if (item)
+                          os << ' ' << *item;
+                  });
 
     return os;
 }

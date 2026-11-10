@@ -13,7 +13,7 @@ struct Player
 
     Player();
     Player(const std::string &_name, const Vec3 &_position);
-    Player(const Player &other); 
+    Player(const Player &other); // copiere profunda: inventarul se copiaza unealta cu unealta
     Player &operator=(const Player &other);
 
     bool operator==(const Player &other) const;
@@ -24,6 +24,15 @@ struct Player
     void Rotate(float deltaYaw, float deltaPitch);
     void AddFear(float amount);
     Vec3 GetPosition() const;
+
+    // Inventar. Uneltele se cauta si se returneaza prin referinte (nu prin pointeri).
+    void AddTool(std::unique_ptr<Tool> tool);
+    bool HasTool(ToolType type) const;
+    Tool &GetTool(ToolType type);       // arunca std::out_of_range daca unealta nu exista
+    Tool &ActiveTool();                 // arunca std::out_of_range daca nu exista unealta activa
+    const Tool &ActiveTool() const;
+    void NextTool();
+    void PrevTool();
 
     std::string name;
 

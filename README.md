@@ -44,8 +44,8 @@ Fiecare fișier `.hpp` din `Fisiere_HPP` are fișierul `.cpp` corespunzător în
 | `NarrationLine.hpp` | o replică din povestea narată |
 | `StoryManager.hpp` | gestionarea poveștii și a replicilor |
 | `Listener.hpp` | starea input-ului (tastatură, mouse) |
-| `IRenderer.hpp` | clasa de bază abstractă pentru redarea obiectelor de joc |
-| `Renderer.hpp` | desenatorul concret (moștenește `IRenderer`): fereastră, lanternă, HUD |
+| `Renderer.hpp` | clasa de bază abstractă pentru redarea obiectelor de joc (date de afișare + metode pur virtuale) |
+| `ConsoleRenderer.hpp` | desenatorul concret, moștenește `Renderer` și scrie în consolă |
 | `GameEngine.hpp` | motorul jocului, ține toate componentele |
 
 ---
@@ -61,9 +61,9 @@ Proiectul este scris în C++17 și se construiește din linia de comandă, cu co
 
 ### Pași
 
-1. Clonează repozitoriul și intră în ramura `lab03`:
+1. Clonează repozitoriul și intră în ramura `lab04`:
    ```
-   git checkout lab03
+   git checkout lab04
    git pull
    ```
 
@@ -158,8 +158,69 @@ Primele valori sunt câmpurile jucătorului, apoi numărul de unelte, apoi fieca
 
 ### Clasa abstractă pentru redare
 
-`IRenderer` (`IRenderer.hpp`) este clasa de bază abstractă pentru redarea obiectelor de joc. Toate metodele ei sunt pur virtuale (`Init`, `Clear`, `Present`, `DrawScene`, `DrawHUD`) și are destructor virtual, deci nu se poate crea un obiect `IRenderer` direct. `Renderer` o moștenește și implementează metodele cu `override`. Un alt desenator (în consolă, OpenGL) se adaugă prin simpla moștenire din `IRenderer`.
+`Renderer` (`Renderer.hpp`) este clasa de bază abstractă pentru redarea obiectelor de joc. Metodele de desenare (`Init`, `Clear`, `Present`, `DrawScene`, `DrawHUD`) sunt pur virtuale (`= 0`) și clasa are destructor virtual, deci nu se poate crea un obiect `Renderer` direct. Datele de afișare (fereastră, lanternă, subtitrări) rămân câmpuri ale clasei de bază. `ConsoleRenderer` o moștenește și implementează metodele cu `override`. Un alt desenator (OpenGL, de exemplu) se adaugă prin simpla moștenire din `Renderer`.
+
+## Laborator 04: biblioteca standard C++
+
+Codul din lab03 a fost rescris cu biblioteca standard, fără pointeri bruți și fără `new` / `delete`.
+
+### Containere STL
+
+| Container | Unde | De ce |
+|---|---|---|
+| `std::map<int, Location>` | `GameEngine::locations` | locațiile se găsesc după id și rămân ordonate |
+| `std::set<int>` | `Location::exits`, `Location::events` | id-uri unice, ordonate automat |
+| `std::vector` | `Player::items`, `GameEngine::events`, `StoryManager::lines`, `Location::interactables`, `PolaroidCamera::photos` | secvențe cu acces după index |
+| `std::map<std::string, bool>` | `StoryManager::endingFlags` | indicatori ai finalului |
+| `std::map<int, Action>` | `Listener::keyBindings` | asocierea tastă → acțiune |
+| `std::optional<std::string>` | `StoryManager::PlayNext` | „poate nu există replică", fără pointer nul |
+
+### Fluxuri de intrare / ieșire
+
+- `operator<<` și `operator>>` pentru toate elementele de joc (lab03), acum scrise cu `std::for_each`.
+- `GameEngine::SaveGame` și `GameEngine::LoadGame` folosesc `std::ofstream` și `std::ifstream`. `LoadGame` citește totul în variabile locale și modifică motorul abia după ce citirea a reușit, deci un fișier corupt nu strică jocul.
+- `ConsoleRenderer` scrie în orice `std::ostream` primit ca referință (implicit `std::cout`).
+- Afișarea în consolă se face cu `std::cout`, `std::ostream_iterator` și `std::flush`.
+
+### Referințe și smart pointers în locul pointerilor
+
+| Înainte | Acum |
+|---|---|
+| `dynamic_cast<const Flashlight *>(&other)` | `typeid(*this) != typeid(other)` și `static_cast<const Flashlight &>(other)` |
+| căutarea unei unelte ar fi întors `Tool *` | `Player::GetTool` și `Player::ActiveTool` întorc `Tool &` și aruncă `std::out_of_range` dacă nu există |
+| `GameEngine::FindLocation` / `FindEvent` | întorc `Location &` / `Event &` |
+| replică inexistentă ar fi însemnat `nullptr` | `std::optional<std::string>` |
+| desenatorul alocat cu `new` | `std::unique_ptr<Renderer>` creat cu `std::make_unique<ConsoleRenderer>()` |
+| fluxul de ieșire al desenatorului | `std::ostream &out` (referință) |
+
+Uneltele rămân în `std::vector<std::unique_ptr<Tool>>`, iar copierea lor se face prin `Clone()`.
+
+### Șiruri de caractere
+
+Peste tot se folosește `std::string`, fără `char *` sau tablouri de `char`. Enum-urile au funcții `ToString(...)` care întorc `std::string` pentru afișare.
+
+### Algoritmi STL
+
+| Scop | Algoritm | Unde |
+|---|---|---|
+| căutare | `std::find_if` | `Player::GetTool`, `StoryManager::PlayNext`, `GameEngine::FindEvent` |
+| căutare | `std::any_of` | `Player::HasTool` |
+| căutare | `std::find` | `StoryManager::HasLore` |
+| căutare | `std::upper_bound` | `StoryManager::AddLine` (poziția unde se inserează replica) |
+| numărare | `std::count_if` | `StoryManager::RemainingLines`, `operator<<` pentru `Player` |
+| sortare | `std::sort` | `GameEngine::Init` și `LoadGame` ordonează evenimentele după id (`Event::operator<`) |
+| comparare | `std::equal` | `Player::operator==` compară inventarele |
+| comparare | `std::tie` | `Vec3` și `Color` compară lexicografic, ca `std::lexicographical_compare` |
+| copiere | `std::transform` | copierea profundă a inventarului (`Clone()` pentru fiecare unealtă) |
+| copiere | `std::copy_if` | `GameEngine::EventsInLocation` |
+| copiere | `std::copy` | `ConsoleRenderer::DrawScene` scrie ieșirile locației |
+| parcurgere | `std::for_each` | scrierea în fluxuri, `GameEngine::TriggerEvents` |
+| limitare | `std::clamp` | `Player::AddFear`, `Update`, `Rotate` |
+
+### Ce face jocul acum
+
+`Init()` creează jucătorul cu 3 unelte, 4 locații, 4 evenimente și 5 replici. `Run()` parcurge locațiile, afișează scena, replicile lui Dima și evenimentele declanșate. Mecanica din GDD funcționează: alarmele false cresc contorul `safeCorners`, iar scarul scriptat apare doar după ce contorul a ajuns la 2. La final, jocul se salvează în `savegame.sav`, se încarcă într-un motor nou și se compară datele.
 
 ### Utilizarea LLM
 
-La acest laborator a fost folosit un LLM pentru scrierea constructorilor și a operatorilor. Codul a fost verificat cu un program de test care compară obiectele după copiere, atribuire și citire / scriere, rulat cu AddressSanitizer și UBSan.
+La laboratoarele 03 și 04 a fost folosit un LLM pentru scrierea constructorilor, a operatorilor și pentru rescrierea codului cu biblioteca standard. Codul a fost verificat cu un program de test care compară obiectele după copiere, atribuire și citire / scriere, rulat cu AddressSanitizer și UBSan.

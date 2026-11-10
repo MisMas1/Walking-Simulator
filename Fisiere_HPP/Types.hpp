@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iosfwd>
+#include <string>
 
 struct Vec3
 {
@@ -76,6 +77,16 @@ enum class EventType {
     Narration
 };
 
+// Distanta euclidiana dintre doua puncte.
+float Distance(const Vec3 &a, const Vec3 &b);
+
+// Nume lizibile pentru afisare (std::string, nu char*).
+std::string ToString(GameState state);
+std::string ToString(ToolType type);
+std::string ToString(EventType type);
+
+// Operatori de intrare / iesire.
+// Format text: valorile sunt separate prin spatiu, enum-urile se scriu ca numar.
 std::ostream &operator<<(std::ostream &os, const Vec3 &v);
 std::istream &operator>>(std::istream &is, Vec3 &v);
 

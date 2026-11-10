@@ -1,8 +1,10 @@
 #include "Tools.hpp"
 
+#include <algorithm>
 #include <iomanip>
 #include <istream>
 #include <ostream>
+#include <typeinfo>
 
 // ---------- Flashlight ----------
 
@@ -35,10 +37,13 @@ std::unique_ptr<Tool> Flashlight::Clone() const { return std::make_unique<Flashl
 
 bool Flashlight::Equals(const Tool &other) const
 {
-    const Flashlight *o = dynamic_cast<const Flashlight *>(&other);
-    return o != nullptr && Tool::Equals(other) && radius == o->radius &&
-           intensity == o->intensity && flickerChance == o->flickerChance &&
-           isFlickering == o->isFlickering;
+    // typeid(*this) este tipul real (dinamic) al obiectului; comparam tipurile fara pointeri.
+    if (typeid(*this) != typeid(other))
+        return false;
+    const Flashlight &o = static_cast<const Flashlight &>(other);
+    return Tool::Equals(other) && radius == o.radius &&
+           intensity == o.intensity && flickerChance == o.flickerChance &&
+           isFlickering == o.isFlickering;
 }
 
 void Flashlight::Print(std::ostream &os) const
@@ -121,17 +126,19 @@ std::unique_ptr<Tool> PolaroidCamera::Clone() const { return std::make_unique<Po
 
 bool PolaroidCamera::Equals(const Tool &other) const
 {
-    const PolaroidCamera *o = dynamic_cast<const PolaroidCamera *>(&other);
-    return o != nullptr && Tool::Equals(other) && photosLeft == o->photosLeft &&
-           photos == o->photos && flashCooldown == o->flashCooldown;
+    // typeid(*this) este tipul real (dinamic) al obiectului; comparam tipurile fara pointeri.
+    if (typeid(*this) != typeid(other))
+        return false;
+    const PolaroidCamera &o = static_cast<const PolaroidCamera &>(other);
+    return Tool::Equals(other) && photosLeft == o.photosLeft &&
+           photos == o.photos && flashCooldown == o.flashCooldown;
 }
 
 void PolaroidCamera::Print(std::ostream &os) const
 {
     Tool::Print(os);
     os << ' ' << photosLeft << ' ' << flashCooldown << ' ' << photos.size();
-    for (const Photo &photo : photos)
-        os << ' ' << photo;
+    std::for_each(photos.begin(), photos.end(), [&os](const Photo &photo) { os << ' ' << photo; });
 }
 
 void PolaroidCamera::Read(std::istream &is)
@@ -181,9 +188,12 @@ std::unique_ptr<Tool> EMFMeter::Clone() const { return std::make_unique<EMFMeter
 
 bool EMFMeter::Equals(const Tool &other) const
 {
-    const EMFMeter *o = dynamic_cast<const EMFMeter *>(&other);
-    return o != nullptr && Tool::Equals(other) && currentLevel == o->currentLevel &&
-           detectionRange == o->detectionRange && sensitivity == o->sensitivity;
+    // typeid(*this) este tipul real (dinamic) al obiectului; comparam tipurile fara pointeri.
+    if (typeid(*this) != typeid(other))
+        return false;
+    const EMFMeter &o = static_cast<const EMFMeter &>(other);
+    return Tool::Equals(other) && currentLevel == o.currentLevel &&
+           detectionRange == o.detectionRange && sensitivity == o.sensitivity;
 }
 
 void EMFMeter::Print(std::ostream &os) const
@@ -229,10 +239,13 @@ std::unique_ptr<Tool> SpiritPod::Clone() const { return std::make_unique<SpiritP
 
 bool SpiritPod::Equals(const Tool &other) const
 {
-    const SpiritPod *o = dynamic_cast<const SpiritPod *>(&other);
-    return o != nullptr && Tool::Equals(other) && isListening == o->isListening &&
-           responseChance == o->responseChance && lastResponse == o->lastResponse &&
-           range == o->range;
+    // typeid(*this) este tipul real (dinamic) al obiectului; comparam tipurile fara pointeri.
+    if (typeid(*this) != typeid(other))
+        return false;
+    const SpiritPod &o = static_cast<const SpiritPod &>(other);
+    return Tool::Equals(other) && isListening == o.isListening &&
+           responseChance == o.responseChance && lastResponse == o.lastResponse &&
+           range == o.range;
 }
 
 void SpiritPod::Print(std::ostream &os) const
@@ -276,9 +289,12 @@ std::unique_ptr<Tool> DowsingRods::Clone() const { return std::make_unique<Dowsi
 
 bool DowsingRods::Equals(const Tool &other) const
 {
-    const DowsingRods *o = dynamic_cast<const DowsingRods *>(&other);
-    return o != nullptr && Tool::Equals(other) && angle == o->angle &&
-           pointingAt == o->pointingAt && detectionRange == o->detectionRange;
+    // typeid(*this) este tipul real (dinamic) al obiectului; comparam tipurile fara pointeri.
+    if (typeid(*this) != typeid(other))
+        return false;
+    const DowsingRods &o = static_cast<const DowsingRods &>(other);
+    return Tool::Equals(other) && angle == o.angle &&
+           pointingAt == o.pointingAt && detectionRange == o.detectionRange;
 }
 
 void DowsingRods::Print(std::ostream &os) const
@@ -292,6 +308,8 @@ void DowsingRods::Read(std::istream &is)
     Tool::Read(is);
     is >> angle >> pointingAt >> detectionRange;
 }
+
+// ---------- Functii ajutatoare ----------
 
 std::unique_ptr<Tool> MakeTool(ToolType type)
 {

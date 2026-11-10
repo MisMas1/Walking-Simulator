@@ -4,20 +4,23 @@
 
 #include "Types.hpp"
 
-#include "IRenderer.hpp"
 #include "Player.hpp"
 #include "Location.hpp"
 
-struct Renderer : IRenderer
+// Clasa de baza abstracta pentru redarea obiectelor de joc.
+// Metodele de desenare sunt pur virtuale (= 0), deci nu se poate crea un obiect Renderer direct.
+// Un desenator concret (de exemplu ConsoleRenderer) o mosteneste si implementeaza metodele.
+struct Renderer
 {
 
     Renderer();
+    virtual ~Renderer(); // virtual: desenatorul se sterge prin pointer la Renderer
 
-    bool Init() override;
-    void Clear() override;
-    void Present() override;
-    void DrawScene(const Location &location, const Player &player) override;
-    void DrawHUD(const Player &player) override;
+    virtual bool Init() = 0;
+    virtual void Clear() = 0;
+    virtual void Present() = 0;
+    virtual void DrawScene(const Location &location, const Player &player) = 0;
+    virtual void DrawHUD(const Player &player) = 0;
 
     int windowWidth = 1280;
     int windowHeight = 720;

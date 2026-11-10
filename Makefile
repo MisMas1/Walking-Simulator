@@ -6,7 +6,7 @@ HDRS    := $(wildcard Fisiere_HPP/*.hpp)
 TARGET  := GonjiamGame.exe
 
 OBJS := Types.o Tool.o Tools.o Player.o Event.o Location.o \
-        NarrationLine.o StoryManager.o Listener.o IRenderer.o Renderer.o GameEngine.o main.o
+        NarrationLine.o StoryManager.o Listener.o Renderer.o ConsoleRenderer.o GameEngine.o main.o
 
 all: $(TARGET)
 
@@ -40,8 +40,8 @@ StoryManager.o: $(SRC_DIR)/StoryManager.cpp $(HDRS)
 Listener.o: $(SRC_DIR)/Listener.cpp $(HDRS)
 	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/Listener.cpp -o Listener.o
 
-IRenderer.o: $(SRC_DIR)/IRenderer.cpp $(HDRS)
-	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/IRenderer.cpp -o IRenderer.o
+ConsoleRenderer.o: $(SRC_DIR)/ConsoleRenderer.cpp $(HDRS)
+	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/ConsoleRenderer.cpp -o ConsoleRenderer.o
 
 Renderer.o: $(SRC_DIR)/Renderer.cpp $(HDRS)
 	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/Renderer.cpp -o Renderer.o

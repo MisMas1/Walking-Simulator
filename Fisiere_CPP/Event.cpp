@@ -55,8 +55,18 @@ bool Event::operator!=(const Event &other) const { return !(*this == other); }
 
 bool Event::operator<(const Event &other) const { return id < other.id; }
 
-bool Event::ShouldTrigger(const Vec3& playerPosition, int safeCorners) const { return false;}
-void Event::Trigger() {}
+// Evenimentul se declanseaza cand jucatorul e destul de aproape si a trecut
+// suficiente colturi "linistite" (mecanica de false alarme din GDD).
+bool Event::ShouldTrigger(const Vec3 &playerPosition, int safeCorners) const
+{
+    if (triggered && oneTimeOnly)
+        return false;
+    if (safeCorners < requiredSafeCorners)
+        return false;
+    return Distance(playerPosition, triggerPosition) <= triggerRadius;
+}
+
+void Event::Trigger() { triggered = true; }
 
 std::ostream &operator<<(std::ostream &os, const Event &e)
 {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iosfwd>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -35,7 +36,7 @@ struct Location
 
     bool operator==(const Location &other) const;
     bool operator!=(const Location &other) const;
-    bool operator<(const Location &other) const; 
+    bool operator<(const Location &other) const; // ordine dupa id
 
     void MarkVisited();
     bool IsVisited() const;
@@ -52,8 +53,8 @@ struct Location
 
     Vec3 size;
 
-    std::vector<int> exits;
-    std::vector<int> events;
+    std::set<int> exits;  // set: id-uri unice, ordonate automat
+    std::set<int> events;
 
     std::vector<Interactable> interactables;
 

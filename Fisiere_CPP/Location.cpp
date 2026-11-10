@@ -1,8 +1,12 @@
 #include "Location.hpp"
 
+#include <algorithm>
 #include <iomanip>
 #include <istream>
+#include <iterator>
 #include <ostream>
+
+// ---------- Interactable ----------
 
 Interactable::Interactable() {}
 
@@ -42,6 +46,8 @@ std::istream &operator>>(std::istream &is, Interactable &item)
 {
     return is >> std::quoted(item.name) >> item.position >> item.used >> std::quoted(item.loreText);
 }
+
+// ---------- Location ----------
 
 Location::Location() {}
 
@@ -87,7 +93,7 @@ bool Location::operator!=(const Location &other) const { return !(*this == other
 
 bool Location::operator<(const Location &other) const { return id < other.id; }
 
-void Location::MarkVisited() {}
+void Location::MarkVisited() { visited = true; }
 bool Location::IsVisited() const { return visited; }
 
 std::ostream &operator<<(std::ostream &os, const Location &l)
@@ -96,17 +102,16 @@ std::ostream &operator<<(std::ostream &os, const Location &l)
        << l.isDark << ' ' << l.ambientLight << ' ' << l.hasBackLight << ' '
        << std::quoted(l.ambientSound) << ' ' << l.size << ' ' << l.visited;
 
+    // std::for_each scrie fiecare element, dupa numarul de elemente.
     os << ' ' << l.exits.size();
-    for (int exit : l.exits)
-        os << ' ' << exit;
+    std::for_each(l.exits.begin(), l.exits.end(), [&os](int exit) { os << ' ' << exit; });
 
     os << ' ' << l.events.size();
-    for (int event : l.events)
-        os << ' ' << event;
+    std::for_each(l.events.begin(), l.events.end(), [&os](int event) { os << ' ' << event; });
 
     os << ' ' << l.interactables.size();
-    for (const Interactable &item : l.interactables)
-        os << ' ' << item;
+    std::for_each(l.interactables.begin(), l.interactables.end(),
+                  [&os](const Interactable &item) { os << ' ' << item; });
 
     return os;
 }
@@ -124,7 +129,7 @@ std::istream &operator>>(std::istream &is, Location &l)
     {
         int exit = 0;
         if (is >> exit)
-            l.exits.push_back(exit);
+            l.exits.insert(exit);
     }
 
     is >> count;
@@ -133,7 +138,7 @@ std::istream &operator>>(std::istream &is, Location &l)
     {
         int event = 0;
         if (is >> event)
-            l.events.push_back(event);
+            l.events.insert(event);
     }
 
     is >> count;
