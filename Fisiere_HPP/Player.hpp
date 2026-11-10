@@ -29,6 +29,7 @@ struct Player
     void AddTool(std::unique_ptr<Tool> tool);
     bool HasTool(ToolType type) const;
     Tool &GetTool(ToolType type);       // arunca std::out_of_range daca unealta nu exista
+    const Tool &GetTool(ToolType type) const;
     Tool &ActiveTool();                 // arunca std::out_of_range daca nu exista unealta activa
     const Tool &ActiveTool() const;
     void NextTool();

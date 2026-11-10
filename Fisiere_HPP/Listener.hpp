@@ -25,6 +25,7 @@ struct Listener
     bool prevTool = false;
     bool pause = false;
     bool quit = false;
+    int toolSelection = -1;
 
     float mouseDeltaX = 0.0f;
     float mouseDeltaY = 0.0f;

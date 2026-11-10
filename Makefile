@@ -1,14 +1,21 @@
 CXX := g++
 AR := ar
-CXXFLAGS := -std=c++17 -Wall -Wextra -IFisiere_HPP $(shell pkg-config --cflags sqlite3)
-SQLITE_LIBS := $(shell pkg-config --libs sqlite3)
+RAYLIB_DIR ?= C:/msys64/ucrt64
+RAYLIB_CFLAGS := $(shell pkg-config --cflags raylib 2>/dev/null)
+RAYLIB_LIBS := $(shell pkg-config --libs raylib 2>/dev/null)
+ifeq ($(strip $(RAYLIB_CFLAGS)),)
+RAYLIB_CFLAGS := -I$(RAYLIB_DIR)/include
+RAYLIB_LIBS := -L$(RAYLIB_DIR)/lib -lraylib -lopengl32 -lgdi32 -lwinmm
+endif
+CXXFLAGS := -std=c++17 -Wall -Wextra -IFisiere_HPP $(shell pkg-config --cflags sqlite3) $(RAYLIB_CFLAGS)
+EXTERNAL_LIBS := $(shell pkg-config --libs sqlite3) $(RAYLIB_LIBS)
 
 SRC_DIR := Fisiere_CPP
 HDRS := $(wildcard Fisiere_HPP/*.hpp)
 TARGET := GonjiamGame.exe
 LIB_DIR := build/lib
 
-APP_OBJS := StoryManager.o Listener.o Renderer.o ConsoleRenderer.o GameEngine.o main.o
+APP_OBJS := StoryManager.o Listener.o Renderer.o RaylibRenderer.o GameEngine.o main.o
 DATA_LIBS := $(LIB_DIR)/libtypes.a $(LIB_DIR)/libtool.a $(LIB_DIR)/libtools.a \
              $(LIB_DIR)/libplayer.a $(LIB_DIR)/libevent.a $(LIB_DIR)/liblocation.a \
              $(LIB_DIR)/libnarrationline.a
@@ -16,7 +23,7 @@ DATA_LIBS := $(LIB_DIR)/libtypes.a $(LIB_DIR)/libtool.a $(LIB_DIR)/libtools.a \
 all: $(TARGET)
 
 $(TARGET): $(APP_OBJS) $(DATA_LIBS)
-	$(CXX) -o $@ $(APP_OBJS) -Wl,--start-group $(DATA_LIBS) -Wl,--end-group $(SQLITE_LIBS)
+	$(CXX) -o $@ $(APP_OBJS) -Wl,--start-group $(DATA_LIBS) -Wl,--end-group $(EXTERNAL_LIBS)
 
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
@@ -72,7 +79,7 @@ Listener.o: $(SRC_DIR)/Listener.cpp $(HDRS)
 Renderer.o: $(SRC_DIR)/Renderer.cpp $(HDRS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-ConsoleRenderer.o: $(SRC_DIR)/Consolerenderer.cpp $(HDRS)
+RaylibRenderer.o: $(SRC_DIR)/RaylibRenderer.cpp $(HDRS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 GameEngine.o: $(SRC_DIR)/GameEngine.cpp $(HDRS)

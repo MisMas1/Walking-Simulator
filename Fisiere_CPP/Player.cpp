@@ -143,6 +143,16 @@ Tool &Player::GetTool(ToolType type)
     return **it;
 }
 
+const Tool &Player::GetTool(ToolType type) const
+{
+    Items::const_iterator it = std::find_if(items.begin(), items.end(),
+                                            [type](const std::unique_ptr<Tool> &item)
+                                            { return item && item->type == type; });
+    if (it == items.end())
+        throw std::out_of_range("Player: unealta nu exista in inventar: " + ToString(type));
+    return **it;
+}
+
 Tool &Player::ActiveTool()
 {
     if (activeToolIndex < 0 || static_cast<std::size_t>(activeToolIndex) >= items.size() ||

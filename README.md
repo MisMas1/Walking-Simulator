@@ -52,13 +52,14 @@ Fiecare fișier `.hpp` din `Fisiere_HPP` are fișierul `.cpp` corespunzător în
 
 ## Construirea proiectului
 
-Proiectul este scris în C++17 și se construiește din linia de comandă, cu compilatorul **MinGW G++**, utilitarul **make** și biblioteca externă **SQLite**.
+Proiectul este scris în C++17 și se construiește din linia de comandă, cu compilatorul **MinGW G++**, utilitarul **make**, **SQLite** și **Raylib**.
 
 ### Cerințe
 - Git
 - MinGW G++ (compilator C++)
 - make
 - SQLite 3 (fișiere de dezvoltare, inclusiv `sqlite3.h` și `libsqlite3`)
+- Raylib 5 sau mai nou (fișierul `raylib.h` și biblioteca de linkare)
 - `pkg-config` pentru detectarea opțiunilor SQLite
 
 ### Pași
@@ -75,7 +76,7 @@ Proiectul este scris în C++17 și se construiește din linia de comandă, cu co
    make
    ```
 
-   Comanda `make` compilează modulele de date în biblioteci statice (`build/lib/libtypes.a`, `libtool.a`, `libtools.a`, `libplayer.a`, `libevent.a`, `liblocation.a` și `libnarrationline.a`), apoi le leagă împreună cu modulele aplicației și SQLite în `GonjiamGame.exe`. Fișierele obiect și bibliotecile se reconstruiesc automat când se modifică sursele sau antetele.
+   Comanda `make` compilează modulele de date în biblioteci statice (`build/lib/libtypes.a`, `libtool.a`, `libtools.a`, `libplayer.a`, `libevent.a`, `liblocation.a` și `libnarrationline.a`), apoi le leagă împreună cu motorul 3D Raylib și SQLite în `GonjiamGame.exe`. Fișierele obiect și bibliotecile se reconstruiesc automat când se modifică sursele sau antetele.
 
 3. Rulează jocul:
    ```
@@ -119,6 +120,18 @@ Modulele care conțin datele jocului sunt construite ca biblioteci statice:
 | `libnarrationline.a` | `NarrationLine` |
 
 Pentru stocarea externă a datelor, `GameEngine::SaveGame` și `GameEngine::LoadGame` folosesc SQLite. Baza `savegame.db` conține tabelul `game_state`; starea serializată a jocului este salvată tranzacțional și este citită în variabile temporare înainte de a actualiza motorul. Executabilul se leagă cu `-lsqlite3`, iar conținutul bazei nu trebuie adăugat în Git.
+
+### Mini-joc 3D
+
+Randarea consolei a fost înlocuită cu Raylib: poți explora pădurea și cele patru încăperi ale spitalului din perspectivă FPS. Folosește `W/A/S/D` pentru deplasare, `Shift` pentru sprint și mouse-ul pentru a privi. Treci prin ușile din capetele încăperilor pentru a ajunge în zonele următoare.
+
+- `E` — ridică sau examinează obiectul aflat sub reticul.
+- `F` — aprinde sau stinge lanterna.
+- `Click stânga` — folosește unealta selectată.
+- `1`–`5` sau rotița mouse-ului / `Q` și `R` — schimbă unealta.
+- `Esc` — ieși din joc; progresul se salvează în `savegame.db`.
+
+Jurnalul, SpiritPod-ul și bețele de radiestezie pot fi găsite în încăperi. Aparatul foto, EMF-ul, SpiritPod-ul și bețele au acțiuni proprii, iar indiciile și instrumentele găsite sunt afișate ca mesaje pe ecran.
 
 ---
 

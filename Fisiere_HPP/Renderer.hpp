@@ -38,6 +38,7 @@ struct Renderer
 
     std::string currentSubtitle;
     float subtitleTimer = 0.0f;
+    std::string currentLocationName;
 
     bool showHUD = true;
     bool showFPS = false;

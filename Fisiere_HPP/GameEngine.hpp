@@ -33,6 +33,8 @@ struct GameEngine
     std::vector<Event> EventsInLocation(int locationId) const;
 
     void ChangeLocation(int id);
+    bool InteractWithObject();
+    void UseActiveTool();
 
     // Declanseaza evenimentele eligibile din locatia curenta si intoarce mesajele lor.
     std::vector<std::string> TriggerEvents();
