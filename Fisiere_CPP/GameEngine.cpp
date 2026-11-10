@@ -1,16 +1,47 @@
 #include "GameEngine.hpp"
-#include "ConsoleRenderer.hpp"
+#include "Consolerenderer.hpp"
 #include "Tools.hpp"
 
 #include <algorithm>
-#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <set>
+#include <sstream>
 #include <stdexcept>
+
+#include <sqlite3.h>
+
+namespace
+{
+using DatabaseHandle = std::unique_ptr<sqlite3, decltype(&sqlite3_close)>;
+using StatementHandle = std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)>;
+
+bool OpenDatabase(const std::string &path, int flags, DatabaseHandle &database)
+{
+    sqlite3 *handle = nullptr;
+    const int result = sqlite3_open_v2(path.c_str(), &handle, flags, nullptr);
+    if (result != SQLITE_OK)
+    {
+        std::cerr << "SQLite: nu se poate deschide " << path << ": "
+                  << (handle ? sqlite3_errmsg(handle) : sqlite3_errstr(result)) << '\n';
+        if (handle)
+            sqlite3_close(handle);
+        return false;
+    }
+
+    database.reset(handle);
+    return true;
+}
+
+void ReportDatabaseError(const char *operation, sqlite3 *database)
+{
+    std::cerr << "SQLite: " << operation << ": " << sqlite3_errmsg(database) << '\n';
+}
+}
 
 GameEngine::GameEngine() : renderer(std::make_unique<ConsoleRenderer>()) {}
 
@@ -127,7 +158,7 @@ void GameEngine::Run()
               << story.RemainingLines() << std::endl;
 
     // Salvam jocul intr-un fisier, il incarcam intr-un motor nou si comparam datele.
-    const std::string savePath = "savegame.sav";
+    const std::string savePath = "savegame.db";
     if (SaveGame(savePath))
     {
         GameEngine loaded;
@@ -214,32 +245,102 @@ std::vector<std::string> GameEngine::TriggerEvents()
 
 bool GameEngine::SaveGame(const std::string &path) const
 {
-    std::ofstream file(path);
-    if (!file)
-        return false;
+    std::ostringstream payload;
 
     // max_digits10 garanteaza ca un float scris ca text se citeste inapoi identic.
-    file << std::setprecision(std::numeric_limits<float>::max_digits10);
+    payload << std::setprecision(std::numeric_limits<float>::max_digits10);
 
-    file << player << '\n';
-    file << currentLocationId << ' ' << safeCorners << ' ' << timeSinceLastScare << ' ' << totalTime << '\n';
+    payload << player << '\n';
+    payload << currentLocationId << ' ' << safeCorners << ' ' << timeSinceLastScare << ' ' << totalTime << '\n';
 
-    file << locations.size() << '\n';
+    payload << locations.size() << '\n';
     std::for_each(locations.begin(), locations.end(),
-                  [&file](const std::pair<const int, Location> &entry) { file << entry.second << '\n'; });
+                  [&payload](const std::pair<const int, Location> &entry) { payload << entry.second << '\n'; });
 
-    file << events.size() << '\n';
-    std::for_each(events.begin(), events.end(), [&file](const Event &e) { file << e << '\n'; });
+    payload << events.size() << '\n';
+    std::for_each(events.begin(), events.end(), [&payload](const Event &e) { payload << e << '\n'; });
 
-    file.flush();
-    return file.good();
+    if (!payload)
+        return false;
+
+    DatabaseHandle database(nullptr, &sqlite3_close);
+    if (!OpenDatabase(path, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, database))
+        return false;
+
+    if (sqlite3_exec(database.get(), "BEGIN IMMEDIATE", nullptr, nullptr, nullptr) != SQLITE_OK)
+    {
+        ReportDatabaseError("nu se poate incepe salvarea", database.get());
+        return false;
+    }
+
+    const char *createTable =
+        "CREATE TABLE IF NOT EXISTS game_state ("
+        "id INTEGER PRIMARY KEY CHECK (id = 1), payload TEXT NOT NULL)";
+    if (sqlite3_exec(database.get(), createTable, nullptr, nullptr, nullptr) != SQLITE_OK)
+    {
+        ReportDatabaseError("nu se poate crea tabelul de salvare", database.get());
+        sqlite3_exec(database.get(), "ROLLBACK", nullptr, nullptr, nullptr);
+        return false;
+    }
+
+    sqlite3_stmt *rawStatement = nullptr;
+    const char *saveQuery =
+        "INSERT OR REPLACE INTO game_state (id, payload) VALUES (1, ?1)";
+    if (sqlite3_prepare_v2(database.get(), saveQuery, -1, &rawStatement, nullptr) != SQLITE_OK)
+    {
+        ReportDatabaseError("nu se poate pregati salvarea", database.get());
+        sqlite3_exec(database.get(), "ROLLBACK", nullptr, nullptr, nullptr);
+        return false;
+    }
+    StatementHandle statement(rawStatement, &sqlite3_finalize);
+
+    const std::string serialized = payload.str();
+    if (sqlite3_bind_text(statement.get(), 1, serialized.c_str(),
+                          static_cast<int>(serialized.size()), SQLITE_TRANSIENT) != SQLITE_OK ||
+        sqlite3_step(statement.get()) != SQLITE_DONE)
+    {
+        ReportDatabaseError("nu se poate scrie starea jocului", database.get());
+        statement.reset();
+        sqlite3_exec(database.get(), "ROLLBACK", nullptr, nullptr, nullptr);
+        return false;
+    }
+
+    statement.reset();
+    if (sqlite3_exec(database.get(), "COMMIT", nullptr, nullptr, nullptr) != SQLITE_OK)
+    {
+        ReportDatabaseError("nu se poate confirma salvarea", database.get());
+        sqlite3_exec(database.get(), "ROLLBACK", nullptr, nullptr, nullptr);
+        return false;
+    }
+
+    return true;
 }
 
 bool GameEngine::LoadGame(const std::string &path)
 {
-    std::ifstream file(path);
-    if (!file)
+    DatabaseHandle database(nullptr, &sqlite3_close);
+    if (!OpenDatabase(path, SQLITE_OPEN_READWRITE, database))
         return false;
+
+    sqlite3_stmt *rawStatement = nullptr;
+    const char *loadQuery = "SELECT payload FROM game_state WHERE id = 1";
+    if (sqlite3_prepare_v2(database.get(), loadQuery, -1, &rawStatement, nullptr) != SQLITE_OK)
+    {
+        ReportDatabaseError("nu se poate pregati incarcarea", database.get());
+        return false;
+    }
+    StatementHandle statement(rawStatement, &sqlite3_finalize);
+
+    if (sqlite3_step(statement.get()) != SQLITE_ROW)
+        return false;
+
+    const unsigned char *text = sqlite3_column_text(statement.get(), 0);
+    const int textSize = sqlite3_column_bytes(statement.get(), 0);
+    if (!text || textSize < 0)
+        return false;
+
+    std::istringstream file(std::string(reinterpret_cast<const char *>(text),
+                                        static_cast<std::size_t>(textSize)));
 
     // Citim totul in variabile locale; modificam motorul abia dupa ce citirea a reusit.
     Player loadedPlayer;

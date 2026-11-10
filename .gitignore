@@ -12,3 +12,4 @@ build/
 Thumbs.db
 # Fisier de salvare creat de joc
 *.sav
+*.db

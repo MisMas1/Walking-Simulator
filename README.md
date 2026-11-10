@@ -45,25 +45,27 @@ Fiecare fișier `.hpp` din `Fisiere_HPP` are fișierul `.cpp` corespunzător în
 | `StoryManager.hpp` | gestionarea poveștii și a replicilor |
 | `Listener.hpp` | starea input-ului (tastatură, mouse) |
 | `Renderer.hpp` | clasa de bază abstractă pentru redarea obiectelor de joc (date de afișare + metode pur virtuale) |
-| `ConsoleRenderer.hpp` | desenatorul concret, moștenește `Renderer` și scrie în consolă |
+| `Consolerenderer.hpp` | desenatorul concret, moștenește `Renderer` și scrie în consolă |
 | `GameEngine.hpp` | motorul jocului, ține toate componentele |
 
 ---
 
 ## Construirea proiectului
 
-Proiectul este scris în C++17 și se construiește din linia de comandă, cu compilatorul **MinGW G++** și utilitarul **make**.
+Proiectul este scris în C++17 și se construiește din linia de comandă, cu compilatorul **MinGW G++**, utilitarul **make** și biblioteca externă **SQLite**.
 
 ### Cerințe
 - Git
 - MinGW G++ (compilator C++)
 - make
+- SQLite 3 (fișiere de dezvoltare, inclusiv `sqlite3.h` și `libsqlite3`)
+- `pkg-config` pentru detectarea opțiunilor SQLite
 
 ### Pași
 
-1. Clonează repozitoriul și intră în ramura `lab04`:
+1. Clonează repozitoriul și intră în ramura `lab05`:
    ```
-   git checkout lab04
+   git checkout lab05
    git pull
    ```
 
@@ -73,7 +75,7 @@ Proiectul este scris în C++17 și se construiește din linia de comandă, cu co
    make
    ```
 
-   Comanda `make` compilează fiecare fișier `.cpp` din `Fisiere_CPP` într-un fișier obiect `.o` (de exemplu `g++ -std=c++17 -IFisiere_HPP -c Fisiere_CPP/Player.cpp -o Player.o`), apoi le leagă pe toate într-un singur executabil, `GonjiamGame.exe`. Fișierele `.o` se recompilează automat când se modifică un `.cpp` sau un `.hpp`.
+   Comanda `make` compilează modulele de date în biblioteci statice (`build/lib/libtypes.a`, `libtool.a`, `libtools.a`, `libplayer.a`, `libevent.a`, `liblocation.a` și `libnarrationline.a`), apoi le leagă împreună cu modulele aplicației și SQLite în `GonjiamGame.exe`. Fișierele obiect și bibliotecile se reconstruiesc automat când se modifică sursele sau antetele.
 
 3. Rulează jocul:
    ```
@@ -96,9 +98,27 @@ Cheia `-o` indică fișierul de ieșire, `-c` spune compilatorului să oprească
 
 ### Fișiere de proiect relevante
 
-- **`Makefile`** — construiește automat toate fișierele `.o` și executabilul final.
+- **`Makefile`** — construiește bibliotecile statice și executabilul final, legând SQLite cu opțiunile raportate de `pkg-config`.
 - **`.gitignore`** — exclude din git fișierele generate (`*.o`, `*.exe`) și fișierele specifice editorului.
 - **`Prompt_lab01.md`** — prompturile folosite la generarea structurii inițiale a proiectului (Laboratorul 01).
+
+---
+
+## Laborator 05: biblioteci și stocarea datelor
+
+Modulele care conțin datele jocului sunt construite ca biblioteci statice:
+
+| Bibliotecă | Clase / structuri |
+|---|---|
+| `libtypes.a` | `Vec3`, `Color` și enum-uri |
+| `libtool.a` | clasa de bază `Tool` |
+| `libtools.a` | `Flashlight`, `Photo`, `PolaroidCamera`, `EMFMeter`, `SpiritPod`, `DowsingRods` |
+| `libplayer.a` | `Player` |
+| `libevent.a` | `Event` |
+| `liblocation.a` | `Location`, `Interactable` |
+| `libnarrationline.a` | `NarrationLine` |
+
+Pentru stocarea externă a datelor, `GameEngine::SaveGame` și `GameEngine::LoadGame` folosesc SQLite. Baza `savegame.db` conține tabelul `game_state`; starea serializată a jocului este salvată tranzacțional și este citită în variabile temporare înainte de a actualiza motorul. Executabilul se leagă cu `-lsqlite3`, iar conținutul bazei nu trebuie adăugat în Git.
 
 ---
 
@@ -178,7 +198,7 @@ Codul din lab03 a fost rescris cu biblioteca standard, fără pointeri bruți ș
 ### Fluxuri de intrare / ieșire
 
 - `operator<<` și `operator>>` pentru toate elementele de joc (lab03), acum scrise cu `std::for_each`.
-- `GameEngine::SaveGame` și `GameEngine::LoadGame` folosesc `std::ofstream` și `std::ifstream`. `LoadGame` citește totul în variabile locale și modifică motorul abia după ce citirea a reușit, deci un fișier corupt nu strică jocul.
+- `GameEngine::SaveGame` și `GameEngine::LoadGame` folosesc SQLite; `LoadGame` citește totul în variabile locale și modifică motorul abia după ce citirea a reușit, deci o salvare coruptă nu strică jocul.
 - `ConsoleRenderer` scrie în orice `std::ostream` primit ca referință (implicit `std::cout`).
 - Afișarea în consolă se face cu `std::cout`, `std::ostream_iterator` și `std::flush`.
 
@@ -219,7 +239,7 @@ Peste tot se folosește `std::string`, fără `char *` sau tablouri de `char`. E
 
 ### Ce face jocul acum
 
-`Init()` creează jucătorul cu 3 unelte, 4 locații, 4 evenimente și 5 replici. `Run()` parcurge locațiile, afișează scena, replicile lui Dima și evenimentele declanșate. Mecanica din GDD funcționează: alarmele false cresc contorul `safeCorners`, iar scarul scriptat apare doar după ce contorul a ajuns la 2. La final, jocul se salvează în `savegame.sav`, se încarcă într-un motor nou și se compară datele.
+`Init()` creează jucătorul cu 3 unelte, 4 locații, 4 evenimente și 5 replici. `Run()` parcurge locațiile, afișează scena, replicile lui Dima și evenimentele declanșate. Mecanica din GDD funcționează: alarmele false cresc contorul `safeCorners`, iar scarul scriptat apare doar după ce contorul a ajuns la 2. La final, jocul se salvează în `savegame.db`, se încarcă într-un motor nou și se compară datele.
 
 ### Utilizarea LLM
 
