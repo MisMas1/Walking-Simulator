@@ -23,7 +23,7 @@ struct GameEngine
     void Run();
     void Shutdown();
 
-    // Salvare / incarcare cu fluxuri de fisier (std::ofstream / std::ifstream).
+    // Salvare / incarcare a starii jocului in SQLite.
     bool SaveGame(const std::string &path) const;
     bool LoadGame(const std::string &path);
 
@@ -35,6 +35,8 @@ struct GameEngine
     void ChangeLocation(int id);
     bool InteractWithObject();
     void UseActiveTool();
+    void StartNewGame();
+    void UpdateParanormalActivity();
 
     // Declanseaza evenimentele eligibile din locatia curenta si intoarce mesajele lor.
     std::vector<std::string> TriggerEvents();
@@ -43,11 +45,13 @@ struct GameEngine
     GameState state = GameState::Menu;
     float deltaTime = 0.0f;
     float totalTime = 0.0f;
+    float flashlightFlickerCooldown = 0.0f;
+    float flashlightFlickerDuration = 0.0f;
     int targetFPS = 60;
 
     Player player;
     Listener listener;
-    std::unique_ptr<Renderer> renderer; // smart pointer la clasa abstracta; obiectul real e ConsoleRenderer
+    std::unique_ptr<Renderer> renderer; // rendererul concret foloseste Raylib
     StoryManager story;
 
     std::map<int, Location> locations; // cheia = id-ul locatiei
@@ -57,4 +61,9 @@ struct GameEngine
     int safeCorners = 0;
     float timeSinceLastScare = 0.0f;
     int currentChapter = 0;
+    bool hasStarted = false;
+    bool rodsPlaced = false;
+    bool ghostWasVisible = false;
+    int rodsLocationId = -1;
+    Vec3 rodsPosition;
 };

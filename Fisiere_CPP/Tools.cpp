@@ -8,10 +8,11 @@
 
 // ---------- Flashlight ----------
 
-Flashlight::Flashlight() : Tool(ToolType::Flashlight, "Flashlight") {}
+Flashlight::Flashlight() : Tool(ToolType::Flashlight, "Flashlight", 100.0f, 100.0f / 120.0f) {}
 
 Flashlight::Flashlight(float _radius, float _intensity)
-    : Tool(ToolType::Flashlight, "Flashlight"), radius(_radius), intensity(_intensity) {}
+    : Tool(ToolType::Flashlight, "Flashlight", 100.0f, 100.0f / 120.0f),
+      radius(_radius), intensity(_intensity) {}
 
 Flashlight::Flashlight(const Flashlight &other)
     : Tool(other), radius(other.radius), intensity(other.intensity),
@@ -99,10 +100,12 @@ std::istream &operator>>(std::istream &is, Photo &photo)
 
 // ---------- PolaroidCamera ----------
 
-PolaroidCamera::PolaroidCamera() : Tool(ToolType::PolaroidCamera, "Polaroid Camera") {}
+PolaroidCamera::PolaroidCamera()
+    : Tool(ToolType::PolaroidCamera, "Polaroid Camera", 100.0f, 0.0f) {}
 
 PolaroidCamera::PolaroidCamera(int _photosLeft, float _flashCooldown)
-    : Tool(ToolType::PolaroidCamera, "Polaroid Camera"), photosLeft(_photosLeft), flashCooldown(_flashCooldown) {}
+    : Tool(ToolType::PolaroidCamera, "Polaroid Camera", 100.0f, 0.0f),
+      photosLeft(_photosLeft), flashCooldown(_flashCooldown) {}
 
 PolaroidCamera::PolaroidCamera(const PolaroidCamera &other)
     : Tool(other), photosLeft(other.photosLeft), photos(other.photos), flashCooldown(other.flashCooldown) {}
@@ -160,10 +163,11 @@ void PolaroidCamera::Read(std::istream &is)
 
 // ---------- EMFMeter ----------
 
-EMFMeter::EMFMeter() : Tool(ToolType::EMFMeter, "EMF Meter") {}
+EMFMeter::EMFMeter() : Tool(ToolType::EMFMeter, "EMF Meter", 100.0f, 0.0f) {}
 
 EMFMeter::EMFMeter(float _detectionRange, float _sensitivity)
-    : Tool(ToolType::EMFMeter, "EMF Meter"), detectionRange(_detectionRange), sensitivity(_sensitivity) {}
+    : Tool(ToolType::EMFMeter, "EMF Meter", 100.0f, 0.0f),
+      detectionRange(_detectionRange), sensitivity(_sensitivity) {}
 
 EMFMeter::EMFMeter(const EMFMeter &other)
     : Tool(other), currentLevel(other.currentLevel), detectionRange(other.detectionRange),
@@ -210,10 +214,11 @@ void EMFMeter::Read(std::istream &is)
 
 // ---------- SpiritPod ----------
 
-SpiritPod::SpiritPod() : Tool(ToolType::SpiritPod, "Spirit Pod") {}
+SpiritPod::SpiritPod() : Tool(ToolType::SpiritPod, "Spirit Pod", 100.0f, 0.025f) {}
 
 SpiritPod::SpiritPod(float _responseChance, float _range)
-    : Tool(ToolType::SpiritPod, "Spirit Pod"), responseChance(_responseChance), range(_range) {}
+    : Tool(ToolType::SpiritPod, "Spirit Pod", 100.0f, 0.025f),
+      responseChance(_responseChance), range(_range) {}
 
 SpiritPod::SpiritPod(const SpiritPod &other)
     : Tool(other), isListening(other.isListening), responseChance(other.responseChance),
@@ -262,10 +267,11 @@ void SpiritPod::Read(std::istream &is)
 
 // ---------- DowsingRods ----------
 
-DowsingRods::DowsingRods() : Tool(ToolType::DowsingRods, "Dowsing Rods") {}
+DowsingRods::DowsingRods() : Tool(ToolType::DowsingRods, "Dowsing Rods", 100.0f, 0.02f) {}
 
 DowsingRods::DowsingRods(float _detectionRange)
-    : Tool(ToolType::DowsingRods, "Dowsing Rods"), detectionRange(_detectionRange) {}
+    : Tool(ToolType::DowsingRods, "Dowsing Rods", 100.0f, 0.02f),
+      detectionRange(_detectionRange) {}
 
 DowsingRods::DowsingRods(const DowsingRods &other)
     : Tool(other), angle(other.angle), pointingAt(other.pointingAt), detectionRange(other.detectionRange) {}

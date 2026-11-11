@@ -74,52 +74,109 @@ void GameEngine::Init()
     if (!renderer->Init())
         return;
 
+    StartNewGame();
+    hasStarted = false;
+    state = GameState::Menu;
+    renderer->SetMouseCaptured(false);
+}
+
+void GameEngine::StartNewGame()
+{
     player = Player("Dima", Vec3());
     player.position.y = 1.7f;
-    player.position.z = 8.0f;
+    player.position.z = 24.0f;
     player.AddTool(std::make_unique<Flashlight>());
-    player.AddTool(std::make_unique<EMFMeter>());
-    player.AddTool(std::make_unique<PolaroidCamera>());
+    player.GetTool(ToolType::Flashlight).isActive = true;
+    flashlightFlickerCooldown = static_cast<float>(GetRandomValue(180, 300)) / 10.0f;
+    flashlightFlickerDuration = 0.0f;
 
-    // std::map: locatiile se gasesc dupa id si raman ordonate dupa id.
     const std::vector<Location> built = {
-        MakeLocation(0, "Padurea", "Un drum de pamant printre copaci, noaptea. In departare se zareste spitalul.", {1}, {}),
-        MakeLocation(1, "Curtea spitalului", "O poarta ruginita si o curte plina de buruieni.", {0, 2}, {1}),
-        MakeLocation(2, "Holul principal", "Un hol lung. Tencuiala se cojeste de pe pereti.", {1, 3}, {2, 3}),
-        MakeLocation(3, "Subsolul", "Aer rece si miros de umezeala.", {2}, {4}),
+        MakeLocation(0, "Padurea Gonjiam", "Poteca larga se pierde printre copaci. In fata se afla vechiul sanatoriu.", {1}, {}),
+        MakeLocation(1, "Curtea spitalului", "Curtea este napadita de buruieni. Intrarea principala este deschisa.", {0, 2}, {1}),
+        MakeLocation(2, "Holul de la intrare", "Un hol de primire cu mobilier ravasit si dosare vechi.", {1, 3}, {}),
+        MakeLocation(3, "Coridorul principal", "Un coridor lung leaga saloanele abandonate.", {2, 4}, {2}),
+        MakeLocation(4, "Salonul pacientilor", "Paturile metalice sunt goale. Ceva se misca in capatul camerei.", {3, 5}, {}),
+        MakeLocation(5, "Sala de mese", "Mesele sunt acoperite de praf si farfurii sparte.", {4, 6}, {}),
+        MakeLocation(6, "Sala de operatie", "Sub o placa metalica din podea se afla o deschidere spre subsol.", {5, 7}, {3}),
+        MakeLocation(7, "Arhiva medicala", "Rafturile cu dosare ascund istoria spitalului.", {6, 8}, {}),
+        MakeLocation(8, "Capela", "Lumanari stinse inconjoara un altar crapat.", {7}, {}),
+        MakeLocation(9, "Subsolul", "O incapere joasa si umeda. O scara urca inapoi spre sala de operatie.", {}, {4}),
     };
     locations.clear();
     std::for_each(built.begin(), built.end(), [this](const Location &l) { locations.emplace(l.id, l); });
     locations.at(0).interactables.emplace_back(
-        "Jurnal rupt", Vec3(3.0f, 0.8f, -6.0f), "In jurnal scrie: «Nu veni dupa mine la subsol.»");
+        "Baterii infinite", Vec3(0.0f, 0.55f, 17.0f), "Bateria infinita reface incarcarea tuturor uneltelor.");
+    locations.at(0).interactables.emplace_back(
+        "Baterii", Vec3(-8.0f, 0.55f, -3.0f), "Ai luat baterii. Uneltele tale au fost reincarcate.");
+    locations.at(0).interactables.emplace_back(
+        "Aparat foto Polaroid", Vec3(-0.8f, 0.65f, 22.0f), "Ai gasit aparatul Polaroid. Selecteaza-l cu slotul 2.");
+    locations.at(0).interactables.emplace_back(
+        "EMF Meter", Vec3(0.8f, 0.65f, 22.0f), "Ai gasit detectorul EMF. Selecteaza-l cu slotul 3.");
+    locations.at(0).interactables.emplace_back(
+        "SpiritPod", Vec3(-0.8f, 0.65f, 20.8f), "Ai gasit un SpiritPod. Selecteaza-l cu slotul 4.");
+    locations.at(0).interactables.emplace_back(
+        "Bete de radiestezie", Vec3(0.8f, 0.65f, 20.8f), "Ai gasit betele de radiestezie. Selecteaza-le cu slotul 5.");
     locations.at(1).interactables.emplace_back(
-        "SpiritPod", Vec3(-4.0f, 0.9f, 1.0f), "Ai gasit un SpiritPod. Apasa E pentru a-l lua.");
+        "Baterii", Vec3(6.0f, 0.55f, 2.0f), "Ai luat baterii. Uneltele tale au fost reincarcate.");
     locations.at(2).interactables.emplace_back(
-        "Bete de radiestezie", Vec3(4.0f, 0.9f, -2.0f), "Ai gasit bete de radiestezie. Apasa E pentru a le lua.");
+        "Jurnal rupt", Vec3(0.0f, 0.65f, -7.0f), "In jurnal scrie: «Nu cobori singur in subsol.»");
     locations.at(3).interactables.emplace_back(
-        "Dosar medical", Vec3(0.0f, 0.9f, -7.0f), "Dosarul este gol, cu exceptia unei fotografii arse.");
+        "Baterii", Vec3(-7.0f, 0.55f, 4.0f), "Ai luat baterii. Uneltele tale au fost reincarcate.");
+    locations.at(4).interactables.emplace_back(
+        "Baterii", Vec3(7.0f, 0.55f, 5.0f), "Ai luat baterii. Uneltele tale au fost reincarcate.");
+    locations.at(5).interactables.emplace_back(
+        "Baterii", Vec3(0.0f, 0.55f, -7.0f), "Ai luat baterii. Uneltele tale au fost reincarcate.");
+    locations.at(6).interactables.emplace_back(
+        "Trapa spre subsol", Vec3(0.0f, 0.2f, 0.0f), "Cobori prin deschiderea din podea in subsol.");
+    locations.at(7).interactables.emplace_back(
+        "Baterii", Vec3(7.0f, 0.55f, 2.0f), "Ai luat baterii. Uneltele tale au fost reincarcate.");
+    locations.at(8).interactables.emplace_back(
+        "Baterii", Vec3(-7.0f, 0.55f, 3.0f), "Ai luat baterii. Uneltele tale au fost reincarcate.");
+    locations.at(3).interactables.emplace_back(
+        "Dosar medical", Vec3(0.0f, 0.65f, -7.0f), "Dosarul este gol, cu exceptia unei fotografii arse.");
+    locations.at(9).interactables.emplace_back(
+        "Baterii", Vec3(-7.0f, 0.55f, -4.0f), "Ai luat baterii. Uneltele tale au fost reincarcate.");
+    locations.at(9).interactables.emplace_back(
+        "Scara spre sala de operatie", Vec3(0.0f, 0.65f, 8.0f), "Urca scara inapoi spre sala de operatie.");
 
-    // Evenimentele sunt adaugate intentionat in alta ordine, apoi sortate dupa id (Event::operator<).
     events = {
-        MakeEvent(4, EventType::Ambient, 3, 10.0f, 0, "Se aude o respiratie in intuneric."),
-        MakeEvent(3, EventType::Scripted, 2, 35.0f, 2, "O usa se trinteste singura in spatele tau!"),
-        MakeEvent(1, EventType::FalseAlarm, 1, 0.0f, 0, "Un zgomot dupa colt... dar nu e nimic."),
-        MakeEvent(2, EventType::FalseAlarm, 2, 0.0f, 0, "O umbra se misca... a fost doar vantul."),
+        MakeEvent(4, EventType::Ambient, 9, 18.0f, 0, "O soapta rece se aude de sub scara."),
+        MakeEvent(3, EventType::Scripted, 6, 35.0f, 2, "Trapa metalica se inchide in urma ta!"),
+        MakeEvent(1, EventType::FalseAlarm, 1, 0.0f, 0, "Poarta scartaie in spatele tau."),
+        MakeEvent(2, EventType::FalseAlarm, 3, 0.0f, 0, "Un zgomot rasuna pe coridor."),
     };
+    events[0].triggerPosition = Vec3(0.0f, 1.7f, 6.0f);
+    events[1].triggerPosition = Vec3(0.0f, 1.7f, 0.0f);
+    events[2].triggerPosition = Vec3(0.0f, 1.7f, 0.0f);
+    events[3].triggerPosition = Vec3(0.0f, 1.7f, -4.0f);
+    events[1].requiredSafeCorners = 2;
     std::sort(events.begin(), events.end());
 
     story.lines.clear();
-    story.AddLine(NarrationLine("Sunt Dima. Noaptea asta ma duc la Spitalul Psihiatric Gonjiam, ca sa arat ca nu e nimic infricosator acolo.", 4.0f, 0, Vec3(), 0));
-    story.AddLine(NarrationLine("Se spune ca spitalul a fost construit in mijlocul padurii, departe de orice oras.", 4.0f, 0, Vec3(), 0));
-    story.AddLine(NarrationLine("Oamenii zic ca de aceea locul e bantuit. Eu zic ca sunt doar povesti.", 4.0f, 1, Vec3(), 1));
-    story.AddLine(NarrationLine("Holul asta pare mai lung decat ar trebui sa fie.", 3.0f, 2, Vec3(), 1));
-    story.AddLine(NarrationLine("Subsolul. Aici s-ar fi intamplat cele mai ciudate lucruri, zice legenda.", 4.0f, 3, Vec3(), 2));
+    story = StoryManager();
+    story.AddLine(NarrationLine("Sunt Dima. In noaptea asta voi filma fiecare incapere a spitalului Gonjiam.", 4.0f, 0, Vec3(), 0));
+    story.AddLine(NarrationLine("Nimeni nu a mai intrat aici de ani de zile. Cel putin, asa mi s-a spus.", 4.0f, 1, Vec3(), 0));
+    story.AddLine(NarrationLine("Holul principal duce spre saloane, sala de mese si blocul operator.", 4.0f, 3, Vec3(), 1));
+    story.AddLine(NarrationLine("Dosarele pomenesc o trapa ascunsa in podeaua salii de operatie.", 4.0f, 6, Vec3(), 1));
+    story.AddLine(NarrationLine("Subsolul. Aici s-au oprit toate rapoartele medicale.", 4.0f, 9, Vec3(), 2));
 
     currentLocationId = locations.begin()->first;
     safeCorners = 0;
     timeSinceLastScare = 0.0f;
     totalTime = 0.0f;
-    state = GameState::Menu;
+    rodsPlaced = false;
+    rodsLocationId = -1;
+    rodsPosition = Vec3();
+    ghostWasVisible = false;
+    renderer->rodsPlaced = false;
+    renderer->rodsLocationId = -1;
+    renderer->ghostVisible = false;
+    renderer->flashlightEnabled = true;
+    renderer->flashlightFlickerTimer = 0.0f;
+    renderer->cameraFlashTimer = 0.0f;
+    renderer->currentSubtitle.clear();
+    renderer->subtitleTimer = 0.0f;
+    hasStarted = true;
 }
 
 void GameEngine::Run()
@@ -131,22 +188,109 @@ void GameEngine::Run()
     }
 
     running = true;
-    state = GameState::Playing;
-    if (std::optional<std::string> line = story.PlayNext(currentLocationId))
-    {
-        renderer->currentSubtitle = *line;
-        renderer->subtitleTimer = 6.0f;
-    }
-
     while (running && !WindowShouldClose())
     {
+        if (state == GameState::Menu)
+        {
+            const MenuAction action = renderer->DrawMainMenu(hasStarted);
+            if (action == MenuAction::Start)
+            {
+                StartNewGame();
+                state = GameState::Playing;
+                renderer->SetMouseCaptured(true);
+                listener.ResetFrame();
+                if (std::optional<std::string> line = story.PlayNext(currentLocationId))
+                {
+                    renderer->currentSubtitle = *line;
+                    renderer->subtitleTimer = 6.0f;
+                }
+            }
+            else if (action == MenuAction::Continue)
+            {
+                state = GameState::Playing;
+                renderer->SetMouseCaptured(true);
+                listener.ResetFrame();
+            }
+            else if (action == MenuAction::Quit)
+            {
+                running = false;
+            }
+            continue;
+        }
+
+        if (state == GameState::Paused)
+        {
+            const MenuAction action = renderer->DrawPauseMenu();
+            if (action == MenuAction::Resume)
+            {
+                state = GameState::Playing;
+                renderer->SetMouseCaptured(true);
+                listener.ResetFrame();
+            }
+            else if (action == MenuAction::MainMenu)
+            {
+                state = GameState::Menu;
+                renderer->SetMouseCaptured(false);
+            }
+            else if (action == MenuAction::Quit)
+            {
+                running = false;
+            }
+            continue;
+        }
+
         listener.Poll();
         if (listener.quit)
             break;
+        if (listener.pause)
+        {
+            state = GameState::Paused;
+            renderer->SetMouseCaptured(false);
+            continue;
+        }
 
         deltaTime = std::min(GetFrameTime(), 0.05f);
         totalTime += deltaTime;
         timeSinceLastScare += deltaTime;
+        renderer->cameraFlashTimer =
+            std::max(0.0f, renderer->cameraFlashTimer - deltaTime);
+
+        const bool flashlightActive = player.HasTool(ToolType::Flashlight) &&
+                                      player.GetTool(ToolType::Flashlight).isActive &&
+                                      player.GetTool(ToolType::Flashlight).battery > 0.0f;
+        if (flashlightActive)
+        {
+            if (flashlightFlickerDuration > 0.0f)
+            {
+                flashlightFlickerDuration =
+                    std::max(0.0f, flashlightFlickerDuration - deltaTime);
+            }
+            else
+            {
+                flashlightFlickerCooldown -= deltaTime;
+                if (flashlightFlickerCooldown <= 0.0f)
+                {
+                    if (GetRandomValue(0, 99) < 60)
+                    {
+                        flashlightFlickerDuration =
+                            static_cast<float>(GetRandomValue(8, 20)) / 100.0f;
+                        flashlightFlickerCooldown =
+                            static_cast<float>(GetRandomValue(180, 300)) / 10.0f;
+                        player.AddFear(2.0f);
+                    }
+                    else
+                    {
+                        flashlightFlickerCooldown =
+                            static_cast<float>(GetRandomValue(120, 240)) / 10.0f;
+                    }
+                }
+            }
+        }
+        else
+        {
+            flashlightFlickerDuration = 0.0f;
+        }
+        renderer->flashlightFlickerTimer = flashlightFlickerDuration;
 
         player.Rotate(listener.mouseDeltaX * listener.mouseSensitivity,
                       -listener.mouseDeltaY * listener.mouseSensitivity);
@@ -154,8 +298,16 @@ void GameEngine::Run()
         if (listener.flashlightToggle && player.HasTool(ToolType::Flashlight))
         {
             Tool &flashlight = player.GetTool(ToolType::Flashlight);
-            flashlight.isActive = !flashlight.isActive;
-            renderer->currentSubtitle = flashlight.isActive ? "Lanterna aprinsa." : "Lanterna stinsa.";
+            if (flashlight.isActive || flashlight.battery > 0.0f)
+            {
+                flashlight.isActive = !flashlight.isActive;
+                renderer->flashlightEnabled = flashlight.isActive;
+                renderer->currentSubtitle = flashlight.isActive ? "Lanterna aprinsa." : "Lanterna stinsa.";
+            }
+            else
+            {
+                renderer->currentSubtitle = "Lanterna descarcata. Cauta baterii.";
+            }
             renderer->subtitleTimer = 2.0f;
         }
 
@@ -208,8 +360,16 @@ void GameEngine::Run()
             player.isSprinting = false;
         }
 
-        player.position.x = std::clamp(player.position.x, -10.5f, 10.5f);
-        if (player.position.z < -10.5f &&
+        const float locationHalfSize = currentLocationId == 0 ? 28.0f : 10.5f;
+        player.position.x = std::clamp(player.position.x, -locationHalfSize, locationHalfSize);
+        if (currentLocationId == 0 && player.position.z < -28.0f &&
+            locations.at(currentLocationId).exits.find(currentLocationId + 1) !=
+                locations.at(currentLocationId).exits.end())
+        {
+            ChangeLocation(1);
+            player.position.z = 9.5f;
+        }
+        else if (player.position.z < -10.5f &&
             locations.at(currentLocationId).exits.find(currentLocationId + 1) !=
                 locations.at(currentLocationId).exits.end())
         {
@@ -225,7 +385,18 @@ void GameEngine::Run()
         }
         else
         {
-            player.position.z = std::clamp(player.position.z, -10.5f, 10.5f);
+            player.position.z = std::clamp(player.position.z, -locationHalfSize, locationHalfSize);
+        }
+
+        if (currentLocationId == 6 &&
+            std::abs(player.position.x) <= 1.25f &&
+            std::abs(player.position.z) <= 1.25f)
+        {
+            ChangeLocation(9);
+            player.position = Vec3(0.0f, 1.7f, 0.0f);
+            player.yaw = 180.0f;
+            renderer->currentSubtitle = "Ai cazut prin trapa in subsol. Scara de iesire este in spatele tau.";
+            renderer->subtitleTimer = 4.0f;
         }
 
         player.Update(deltaTime);
@@ -235,6 +406,27 @@ void GameEngine::Run()
             {
                 tool->cooldownTimer = std::max(0.0f, tool->cooldownTimer - deltaTime);
                 tool->Update(deltaTime);
+                const bool drainsBattery =
+                    (tool->type == ToolType::Flashlight && tool->isActive) ||
+                    (tool->type == ToolType::SpiritPod && tool->isActive) ||
+                    (tool->type == ToolType::DowsingRods && rodsPlaced);
+                if (drainsBattery && tool->battery > 0.0f)
+                {
+                    tool->battery = std::max(0.0f, tool->battery - tool->batteryDrain * deltaTime);
+                    if (tool->battery <= 0.0f)
+                    {
+                        tool->isActive = false;
+                        if (tool->type == ToolType::SpiritPod)
+                            static_cast<SpiritPod &>(*tool).isListening = false;
+                        if (tool->type == ToolType::DowsingRods)
+                        {
+                            rodsPlaced = false;
+                            rodsLocationId = -1;
+                        }
+                        renderer->currentSubtitle = tool->name + " nu mai are baterie.";
+                        renderer->subtitleTimer = 3.0f;
+                    }
+                }
             }
         }
         story.Update(deltaTime);
@@ -248,6 +440,7 @@ void GameEngine::Run()
             renderer->subtitleTimer = 4.0f;
         }
 
+        UpdateParanormalActivity();
         renderer->currentLocationName = FindLocation(currentLocationId).name;
         renderer->Clear();
         renderer->DrawScene(FindLocation(currentLocationId), player);
@@ -258,11 +451,14 @@ void GameEngine::Run()
     running = false;
     Shutdown();
 
-    const std::string savePath = "savegame.db";
-    if (SaveGame(savePath))
-        std::cout << "Joc salvat in " << savePath << ".\n";
-    else
-        std::cerr << "Nu s-a putut salva jocul in " << savePath << ".\n";
+    if (hasStarted)
+    {
+        const std::string savePath = "savegame.db";
+        if (SaveGame(savePath))
+            std::cout << "Joc salvat in " << savePath << ".\n";
+        else
+            std::cerr << "Nu s-a putut salva jocul in " << savePath << ".\n";
+    }
 }
 
 void GameEngine::Shutdown() { running = false; }
@@ -318,6 +514,9 @@ bool GameEngine::InteractWithObject()
     float nearestDistance = 3.5f;
     for (Interactable &item : location.interactables)
     {
+        if (item.used)
+            continue;
+
         const Vec3 offset(item.position.x - player.position.x,
                           item.position.y - player.position.y,
                           item.position.z - player.position.z);
@@ -330,7 +529,7 @@ bool GameEngine::InteractWithObject()
                                              offset.z * offset.z);
         const float perpendicularSquared = std::max(0.0f, offsetLength * offsetLength -
                                                              projection * projection);
-        if (perpendicularSquared <= 0.8f * 0.8f)
+        if (perpendicularSquared <= 1.5f * 1.5f)
         {
             nearestDistance = projection;
             target = &item;
@@ -350,12 +549,44 @@ bool GameEngine::InteractWithObject()
         return false;
     }
 
-    target->used = true;
+    if (target->name == "Trapa spre subsol")
+    {
+        ChangeLocation(9);
+        player.position = Vec3(0.0f, 1.7f, 0.0f);
+        player.yaw = 180.0f;
+        renderer->currentSubtitle = "Ai coborat prin trapa. Scara de iesire este in spatele tau.";
+        renderer->subtitleTimer = 4.0f;
+        return true;
+    }
+    if (target->name == "Scara spre sala de operatie")
+    {
+        ChangeLocation(6);
+        player.position = Vec3(0.0f, 1.7f, 5.0f);
+        player.yaw = 0.0f;
+        renderer->currentSubtitle = "Ai urcat scara inapoi in sala de operatie.";
+        renderer->subtitleTimer = 4.0f;
+        return true;
+    }
+
+    const bool reusableBattery = target->name == "Baterii infinite";
+    if (!reusableBattery)
+        target->used = true;
     story.AddLore(target->loreText);
     renderer->currentSubtitle = target->loreText;
     renderer->subtitleTimer = 5.0f;
 
-    if (target->name == "SpiritPod")
+    if (target->name == "Baterii" || reusableBattery)
+    {
+        for (const std::unique_ptr<Tool> &item : player.items)
+        {
+            if (item)
+                item->battery = item->maxBattery;
+        }
+        renderer->currentSubtitle = reusableBattery
+                                        ? "Baterie infinita: toate uneltele au fost reincarcate."
+                                        : "Baterii colectate. Toate uneltele au fost reincarcate.";
+    }
+    else if (target->name == "SpiritPod")
     {
         player.AddTool(std::make_unique<SpiritPod>());
         renderer->currentSubtitle = "Ai luat SpiritPod. Selecteaza-l cu slotul 4.";
@@ -365,8 +596,43 @@ bool GameEngine::InteractWithObject()
         player.AddTool(std::make_unique<DowsingRods>());
         renderer->currentSubtitle = "Ai luat betele de radiestezie. Selecteaza-le cu slotul 5.";
     }
+    else if (target->name == "Aparat foto Polaroid")
+    {
+        player.AddTool(std::make_unique<PolaroidCamera>());
+        renderer->currentSubtitle = "Ai luat aparatul Polaroid. Selecteaza-l cu slotul 2.";
+    }
+    else if (target->name == "EMF Meter")
+    {
+        player.AddTool(std::make_unique<EMFMeter>());
+        renderer->currentSubtitle = "Ai luat detectorul EMF. Selecteaza-l cu slotul 3.";
+    }
     renderer->subtitleTimer = 5.0f;
     return true;
+}
+
+void GameEngine::UpdateParanormalActivity()
+{
+    renderer->rodsPlaced = rodsPlaced;
+    renderer->rodsPosition = rodsPosition;
+    renderer->rodsLocationId = rodsLocationId;
+    const float phase = totalTime * 0.18f + static_cast<float>(currentLocationId) * 0.73f;
+    const bool rodsInCurrentLocation = rodsPlaced && rodsLocationId == currentLocationId;
+    const float patrolCenterX = rodsInCurrentLocation ? rodsPosition.x
+                                                       : (currentLocationId == 0 ? 5.5f : 0.0f);
+    const float patrolCenterZ = rodsInCurrentLocation ? rodsPosition.z
+                                                       : (currentLocationId == 0 ? -7.0f : 0.0f);
+    const float ghostX = patrolCenterX + std::sin(phase) * (rodsInCurrentLocation ? 3.5f : 4.2f);
+    const float ghostZ = patrolCenterZ + std::cos(phase * (rodsInCurrentLocation ? 0.6f : 0.83f)) *
+                                              (rodsInCurrentLocation ? 1.5f : 5.0f);
+    renderer->ghostPosition = Vec3(ghostX, 0.05f, ghostZ);
+    const Vec3 rodsOffset(ghostX - rodsPosition.x, 0.0f, ghostZ - rodsPosition.z);
+    const bool ghostInRodRadius =
+        rodsInCurrentLocation &&
+        std::sqrt(rodsOffset.x * rodsOffset.x + rodsOffset.z * rodsOffset.z) <= 2.8f;
+    renderer->ghostVisible = ghostInRodRadius;
+    if (ghostInRodRadius && !ghostWasVisible)
+        player.AddFear(10.0f);
+    ghostWasVisible = ghostInRodRadius;
 }
 
 void GameEngine::UseActiveTool()
@@ -377,10 +643,16 @@ void GameEngine::UseActiveTool()
         return;
 
     Tool &tool = player.ActiveTool();
-    Location &location = FindLocation(currentLocationId);
+    if (tool.battery <= 0.0f)
+    {
+        renderer->currentSubtitle = tool.name + " nu mai are baterie. Cauta baterii.";
+        renderer->subtitleTimer = 3.0f;
+        return;
+    }
     if (tool.type == ToolType::Flashlight)
     {
         tool.isActive = !tool.isActive;
+        renderer->flashlightEnabled = tool.isActive;
         renderer->currentSubtitle = tool.isActive ? "Lanterna aprinsa." : "Lanterna stinsa.";
     }
     else if (tool.type == ToolType::PolaroidCamera)
@@ -409,7 +681,9 @@ void GameEngine::UseActiveTool()
             camera.photos.emplace_back(player.position, anomaly,
                                       anomaly ? "Anomalie detectata" : "Camera explorata");
             --camera.photosLeft;
+            camera.battery = std::max(0.0f, camera.battery - 2.0f);
             camera.cooldownTimer = camera.flashCooldown;
+            renderer->cameraFlashTimer = 0.45f;
             renderer->currentSubtitle = anomaly ? "Fotografie facuta: anomalia a aparut pe film."
                                                 : "Fotografie facuta. Nu se vede nimic neobisnuit.";
         }
@@ -417,6 +691,12 @@ void GameEngine::UseActiveTool()
     else if (tool.type == ToolType::EMFMeter)
     {
         EMFMeter &meter = static_cast<EMFMeter &>(tool);
+        if (meter.battery < 0.5f)
+        {
+            renderer->currentSubtitle = "EMF descarcat. Cauta baterii.";
+            renderer->subtitleTimer = 3.0f;
+            return;
+        }
         float nearestEvent = meter.detectionRange;
         for (const Event &event : events)
         {
@@ -427,6 +707,7 @@ void GameEngine::UseActiveTool()
                                  ? std::clamp(5 - static_cast<int>(nearestEvent / meter.detectionRange * 4.0f),
                                               1, 5)
                                  : 1;
+        meter.battery = std::max(0.0f, meter.battery - 0.5f);
         renderer->currentSubtitle = meter.currentLevel > 1
                                         ? "EMF: nivel " + std::to_string(meter.currentLevel) +
                                               " - activitate detectata."
@@ -439,10 +720,12 @@ void GameEngine::UseActiveTool()
         pod.isActive = pod.isListening;
         if (!pod.isListening)
         {
+            pod.isActive = false;
             renderer->currentSubtitle = "SpiritPod oprit.";
         }
         else
         {
+            pod.isActive = true;
             pod.lastResponse.clear();
             for (const Event &event : events)
             {
@@ -461,29 +744,23 @@ void GameEngine::UseActiveTool()
     else if (tool.type == ToolType::DowsingRods)
     {
         DowsingRods &rods = static_cast<DowsingRods &>(tool);
-        const Interactable *nearest = nullptr;
-        float nearestDistance = rods.detectionRange;
-        for (const Interactable &item : location.interactables)
+        if (rodsPlaced)
         {
-            if (item.used)
-                continue;
-            const float distance = Distance(player.position, item.position);
-            if (distance < nearestDistance)
-            {
-                nearest = &item;
-                nearestDistance = distance;
-            }
-        }
-        if (nearest)
-        {
-            rods.pointingAt = nearest->position;
-            rods.angle = std::atan2(nearest->position.x - player.position.x,
-                                    player.position.z - nearest->position.z) * 57.29577951308232f;
-            renderer->currentSubtitle = "Betele indica o prezenta in apropiere.";
+            rodsPlaced = false;
+            rodsLocationId = -1;
+            rods.isActive = false;
+            renderer->currentSubtitle = "Ai ridicat betele de radiestezie.";
         }
         else
         {
-            renderer->currentSubtitle = "Betele nu detecteaza nimic in apropiere.";
+            const float yaw = player.yaw * 0.017453292519943295f;
+            rodsPosition = Vec3(player.position.x + std::sin(yaw) * 1.0f, 0.0f,
+                                player.position.z - std::cos(yaw) * 1.0f);
+            rods.pointingAt = rodsPosition;
+            rods.isActive = true;
+            rodsPlaced = true;
+            rodsLocationId = currentLocationId;
+            renderer->currentSubtitle = "Ai asezat betele. Activitatea se detecteaza pe o raza de 2.8 m.";
         }
     }
     renderer->subtitleTimer = 3.0f;

@@ -123,15 +123,21 @@ Pentru stocarea externă a datelor, `GameEngine::SaveGame` și `GameEngine::Load
 
 ### Mini-joc 3D
 
-Randarea consolei a fost înlocuită cu Raylib: poți explora pădurea și cele patru încăperi ale spitalului din perspectivă FPS. Folosește `W/A/S/D` pentru deplasare, `Shift` pentru sprint și mouse-ul pentru a privi. Treci prin ușile din capetele încăperilor pentru a ajunge în zonele următoare.
+Randarea se face cu Raylib. La pornire jocul detectează rezoluția monitorului și trece în fullscreen fără borduri. Meniul principal oferă opțiunile de început / continuare și ieșire; `Esc` deschide pauza, de unde poți reveni în joc sau la meniul principal.
 
-- `E` — ridică sau examinează obiectul aflat sub reticul.
-- `F` — aprinde sau stinge lanterna.
-- `Click stânga` — folosește unealta selectată.
-- `1`–`5` sau rotița mouse-ului / `Q` și `R` — schimbă unealta.
-- `Esc` — ieși din joc; progresul se salvează în `savegame.db`.
+Explorează pădurea cu sol în nuanțe de pământ, curtea și camerele sanatoriului: holul de la intrare, coridorul, salonul pacienților, sala de mese, sala de operație, arhiva, capela și subsolul. Copacii au trunchiurile așezate la nivelul solului. Fantoma patrulează invizibil și devine vizibilă doar când intră în raza bețelor de radiestezie așezate. În sala de operație, pășește prin deschiderea din centrul podelei pentru a coborî în subsol; ieși urcând scara.
 
-Jurnalul, SpiritPod-ul și bețele de radiestezie pot fi găsite în încăperi. Aparatul foto, EMF-ul, SpiritPod-ul și bețele au acțiuni proprii, iar indiciile și instrumentele găsite sunt afișate ca mesaje pe ecran.
+- `W/A/S/D` — deplasare; `Shift` — sprint; mouse — privire.
+- `E` — ridică sau examinează obiectul spre care privești.
+- `F` — aprinde / stinge lanterna.
+- Click stânga — folosește unealta activă.
+- `1`–`5`, `Q` / `R` sau rotița mouse-ului — schimbă unealta.
+- Click stânga pe butoane — navighează meniul principal și meniul de pauză.
+- `Esc` — deschide pauza; în meniu, `Enter` continuă, `M` revine la meniul principal, iar `Q` iese din joc.
+
+Fără lanternă, scena este aproape complet întunecată; lanterna iluminează o zonă circulară extinsă în centrul privirii și poate pâlpâi rar, adăugând 2% frică la fiecare pâlpâire. Lanterna se descarcă în aproximativ două minute de utilizare continuă. Pachetele colectate reîncarcă uneltele; pachetul de la începutul pădurii poate fi folosit din nou oricând.
+
+Lanterna este disponibilă de la început și este singura lanternă din joc. Aparatul Polaroid, detectorul EMF, SpiritPod-ul și bețele de radiestezie pot fi ridicate în zona de start. Aparatul Polaroid produce un flash luminos la fotografiere. Selectează bețele și apasă click stânga pentru a le așeza sau ridica; cercul galben indică raza de detecție de 2,8 metri, iar fantoma apare translucid când intră în această zonă.
 
 ---
 
